@@ -16,17 +16,45 @@ and ask him for that one credential by name.
 
 ---
 
-## 1. Get the code
+## 1. Retire the old pipeline first
+
+The old package lives at `~/draaiboek` and contains `render.py` and
+`publish.py` — the code that clears a document body and rewrites it. That is
+what destroyed a day of manual edits on 15 September.
+
+It must leave the import path before the new one arrives. Do not delete it;
+move it aside so it can still be consulted but not imported or run:
 
 ```bash
-cd ~/romir_ws
-git clone <this repository>
-cd draaiboek
+mkdir -p ~/romir_ws/archive
+mv ~/draaiboek ~/romir_ws/archive/draaiboek-old-pipeline
 ```
 
-If the directory already exists, `git pull` instead of cloning.
+Check that nothing can still reach it:
 
-## 2. Install
+```bash
+cd ~/romir_ws && python3 -c "import draaiboek" 2>&1 | tail -1
+```
+
+That must say `ModuleNotFoundError`. If it imports, something else is still on
+the path — find it and move that aside too, and say so in your report.
+
+This is not tidying. While `render()` is reachable, it is one bad call away from
+running, and every guarantee the new system makes is void.
+
+## 2. Get the code
+
+Clone outside `~/romir_ws`, so the old name can never shadow the new package:
+
+```bash
+cd ~
+git clone <this repository> draaiboek
+cd ~/draaiboek
+```
+
+If `~/draaiboek` already exists, `git pull` instead of cloning.
+
+## 3. Install
 
 ```bash
 python3 -m venv .venv
@@ -39,7 +67,7 @@ Python 3.12 or newer. Confirm it worked:
 .venv/bin/draaiboek --help
 ```
 
-## 3. Credentials
+## 4. Credentials
 
 Create `~/.draaiboek/env`, readable only by you:
 
@@ -66,7 +94,7 @@ never hand-edit that line while something is running, and never call the Xero
 token endpoint from a scratch script — that consumes the token and the
 replacement is lost.
 
-## 4. Google access
+## 5. Google access
 
 The service account needs to see the documents. Two ways; either is fine.
 
@@ -93,7 +121,7 @@ Note: Docs and Drive authenticate as the service account itself, Gmail as the
 impersonated mailbox. Do not merge those scope sets — requesting them together
 with impersonation is rejected outright.
 
-## 5. Check
+## 6. Check
 
 ```bash
 .venv/bin/draaiboek doctor
@@ -103,7 +131,7 @@ Every line must read `ok`. It names the exact fix for anything that fails,
 including the scopes above. Do not continue past a `FAIL` on Google access —
 without it, nothing can be read or written.
 
-## 6. Start the workspace
+## 7. Start the workspace
 
 This is what Larissa opens.
 
@@ -121,13 +149,13 @@ DRAAIBOEK_UI_KEY='<a long random string>' .venv/bin/draaiboek ui --host 0.0.0.0
 
 Send her the link, and the key separately. Keep it running (launchd or `tmux`).
 
-## 7. Connect yourself to it
+## 8. Connect yourself to it
 
 Register the MCP server so you get the tools:
 
 ```json
 {"mcpServers": {"draaiboek": {
-  "command": "~/romir_ws/draaiboek/.venv/bin/draaiboek",
+  "command": "/Users/<you>/draaiboek/.venv/bin/draaiboek",
   "args": ["serve"]
 }}}
 ```
