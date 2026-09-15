@@ -606,9 +606,19 @@ class Draaiboek:
     def _verify_house_rule(self, quote: str) -> tuple[bool, str]:
         """`house_rule` skips evidence checking, so without this it is the one
         source kind an agent could use to launder anything it liked."""
+        import re
+
         from .sources.base import normalise
-        text = normalise(self.house_rules())
-        if normalise(quote) in text:
+
+        def plain(t: str) -> str:
+            # The rules are markdown. Emphasis, table pipes and bullets are
+            # formatting, not wording -- a rule must not become unquotable
+            # because someone bolded two words in it.
+            t = re.sub(r"[*_`#>|]+", " ", t)
+            return normalise(t)
+
+        text = plain(self.house_rules())
+        if plain(quote) in text:
             return True, ""
         return False, (
             f"No standing rule says {quote!r}. Rules live in rules/house_rules.md "
