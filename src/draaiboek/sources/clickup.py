@@ -50,6 +50,41 @@ def _terms(query: str) -> list[str]:
             if len(t) > 2 and t not in stop and not t.isdigit()]
 
 
+# Words that describe every second event and so distinguish none of them.
+GENERIC = {"bruiloft", "huwelijk", "wedding", "trouwerij", "event", "evenement",
+           "concert", "diner", "feest", "borrel", "uitvaart", "congres",
+           "vergadering", "lunch", "draaiboek", "september", "oktober", "januari"}
+
+
+def _close(a: str, b: str) -> bool:
+    """One substitution apart -- "Lynde" and "Lynda" are the same person, and
+    a name is spelled differently in Xero, ClickUp and the mail more often
+    than not."""
+    if len(a) != len(b) or len(a) < 5:
+        return False
+    return sum(1 for x, y in zip(a, b) if x != y) == 1
+
+
+def match_score(terms: list[str], text: str) -> int:
+    """How many query terms this text matches, counting only terms that
+    actually distinguish one event from another.
+
+    Scoring rather than gating: requiring every term means one misspelling
+    returns nothing, and requiring any term returns every wedding in the file.
+    """
+    if not terms:
+        return 0
+    tokens = {t for t in re.split(r"[^\w]+", text.lower()) if t}
+    score = 0
+    for term in terms:
+        if term in GENERIC:
+            continue
+        if any(tok.startswith(term) or (len(tok) > 3 and term.startswith(tok))
+               or _close(tok, term) for tok in tokens):
+            score += 1
+    return score
+
+
 def _fuzzy(terms: list[str], text: str) -> bool:
     """Prefix matching in both directions, so "Kalma" finds "Kalman" and
     "Bogerd" finds "van den Bogerd"."""

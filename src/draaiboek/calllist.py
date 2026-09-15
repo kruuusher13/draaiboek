@@ -104,6 +104,55 @@ class Target:
                 "tasks": [t.to_dict() for t in self.tasks]}
 
 
+# Larissa pastes supplier blocks straight into a cell, several at a time:
+#
+#   Ceremonieband — Dwight Dissels · 06-46035247 · dwight@example.com
+#   Bezetting: 3 vocalisten, 1 percussionist, 1 gitarist, 1 pianist
+#   Avondband Invictus — Patricia Milop · 06-48052978 · petra@example.com
+#
+# Read as one name that is an unreadable card carrying the wrong number, so
+# each line that names a person with a way to reach them becomes its own
+# contact, and lines that are notes are skipped.
+SEPARATORS = "·•|,;\t"
+DASHES = ("—", "–", " - ")
+
+
+def contacts_in_text(text: str, default_role: str = "") -> list["Target"]:
+    out: list[Target] = []
+    for raw in (text or "").splitlines():
+        line = raw.strip().strip(SEPARATORS).strip()
+        if not line:
+            continue
+        phone = PHONE.search(line)
+        mail = EMAIL.search(line)
+        if not phone and not mail:
+            continue  # a note, not a contact
+
+        cut = min(m.start() for m in (phone, mail) if m)
+        head = line[:cut].strip().strip(SEPARATORS).strip()
+        role = default_role
+        for dash in DASHES:
+            if dash in head:
+                left, right = head.split(dash, 1)
+                if left.strip() and right.strip():
+                    role, head = left.strip(), right.strip()
+                break
+        name = head.strip(SEPARATORS).strip()
+
+        # Guard against a line that is only a number, or a label like
+        # "Telefoon:" -- neither is a person.
+        if not name or len(name) > 60 or name.endswith(":"):
+            continue
+        if PHONE.fullmatch(name) or EMAIL.fullmatch(name):
+            continue
+        out.append(Target(
+            name=name, role=role.strip(SEPARATORS).strip(),
+            phone=phone.group(0).strip() if phone else "",
+            email=mail.group(0) if mail else "",
+        ))
+    return out
+
+
 def _tokens(*parts: str) -> set[str]:
     out: set[str] = set()
     for p in parts:
@@ -138,6 +187,21 @@ def _contacts(view: DocView) -> list[Target]:
             name = cell(c_name)
             if not name:
                 continue
+            # Several contacts pasted into one cell: split them out rather than
+            # showing one card named after the whole block.
+            if "\n" in name or len(name) > 70:
+                split = contacts_in_text(name, default_role=cell(c_role))
+                if len(split) > 1:
+                    for t in split:
+                        t.row_id = row.row_id
+                    out.extend(split)
+                    continue
+                if split:
+                    t = split[0]
+                    t.row_id = row.row_id
+                    t.note = cell(c_info)
+                    out.append(t)
+                    continue
             blob = " ".join(row.values)
             phone = cell(c_tel)
             if not phone or PENDING.search(phone):
@@ -262,6 +326,19 @@ def build(view: DocView, reminders: list[str] | None = None) -> list[dict[str, A
 
     for r in reminders or []:
         assign(r).tasks.append(Task(text=r, kind="herinnering"))
+
+    # The same question often sits in two chapters -- once in Programma and
+    # again in Techniek. Ringing someone twice about it is not thoroughness.
+    for target in list(targets) + [unassigned] + list(groups.values()):
+        seen_text: set[str] = set()
+        deduped = []
+        for task in target.tasks:
+            key = re.sub(r"[^\w ]+", "", task.text.lower()).strip()
+            if key in seen_text:
+                continue
+            seen_text.add(key)
+            deduped.append(task)
+        target.tasks = deduped
 
     # The unassigned bucket is a list of things to place, not a person to ring.
     unassigned.phone = ""

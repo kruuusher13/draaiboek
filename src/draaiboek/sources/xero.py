@@ -14,6 +14,14 @@ import requests
 
 from .base import Evidence, SourceError
 
+def _date_strings(d) -> list[str]:
+    """How this date is written in a Xero reference: "26 september 2026"."""
+    from .dates import MONTHS
+    month = max((name for name, n in MONTHS.items() if n == d.month), key=len)
+    return [f"{d.day} {month} {d.year}", f"{d.day:02d}-{d.month:02d}-{d.year}",
+            d.isoformat()]
+
+
 TOKEN_URL = "https://identity.xero.com/connect/token"
 API = "https://api.xero.com/api.xro/2.0"
 
@@ -143,44 +151,65 @@ class Xero:
         d, rest = find_date(query)
         terms = _terms(rest)
 
-        # 2. A date narrows it to the quotes written around that event.
-        if d:
-            lo = d.replace(year=d.year - 1) if d.month == 2 and d.day == 29 else d
-            found = []
-            for page in range(1, 4):
-                batch = self._quotes(
-                    DateFrom=(lo.replace(year=lo.year - 1)).isoformat(),
-                    DateTo=d.isoformat(), page=page,
-                )
+        # 2. Everything else is one scoring pass.
+        #
+        #    A Xero quote attached to the wrong event is the oldest bug here --
+        #    the Uitvaart van den Bogerd quote kept turning up on unrelated
+        #    events. Two rules keep it honest:
+        #
+        #      * A date alone never qualifies a quote. Several weddings share a
+        #        Saturday in September, and the quote references all say
+        #        "Bruiloft", so matching on those words returns every wedding in
+        #        the file. Words that describe every second event score nothing.
+        #      * Only the best-scoring quotes come back. A weaker match is a
+        #        different event, and returning it reads as confirmation.
+        from .clickup import GENERIC, match_score
+
+        distinctive = [t for t in terms if t not in GENERIC]
+        dates = _date_strings(d) if d else []
+
+        scored: list[tuple[int, dict]] = []
+        for q in self._all_quotes():
+            contact = (q.get("Contact") or {}).get("Name", "")
+            ref = (q.get("Reference", "") or "")
+            hay = f"{q.get('QuoteNumber','')} {contact} {ref}"
+            named = match_score(terms, hay)
+            # The year matters. Half the references say "26 september"; only
+            # one of them is this year's event.
+            dated = any(ds in ref.lower() for ds in dates)
+
+            if distinctive:
+                # A name was given: it has to match. The date only ranks.
+                if not named:
+                    continue
+                scored.append((named + (2 if dated else 0), q))
+            elif dated:
+                # Only a date was given. Every quote for that exact day is a
+                # candidate; none of them is confirmed to be the right one.
+                scored.append((1, q))
+
+        if not scored:
+            return []
+        best = max(s for s, _ in scored)
+        return [self._to_evidence(q)
+                for s, q in sorted(scored, key=lambda sq: -sq[0])
+                if s == best][:limit]
+
+    _cache: list[dict] | None = None
+
+    def _all_quotes(self) -> list[dict]:
+        """Xero pages 100 at a time and has well over a thousand quotes.
+        Fetched once per process; a quote does not change mid-run."""
+        if Xero._cache is None:
+            out, page = [], 1
+            while page <= 30:
+                batch = self._quotes(page=page)
                 if not batch:
                     break
-                found.extend(batch)
-            # With names, match the contact. With only a date, a quote must name
-            # that date itself -- "some quote from that year" is how quotes got
-            # attached to the wrong event.
-            matched = [q for q in found
-                       if (_fuzzy(terms, f"{(q.get('Contact') or {}).get('Name','')} "
-                                         f"{q.get('Reference','')}") if terms
-                           else mentions(f"{q.get('Reference','')} {q.get('Title','')} "
-                                         f"{q.get('Summary','')}", d))]
-            if matched:
-                return [self._to_evidence(q) for q in matched[-limit:]]
-
-        # 3. Otherwise walk pages newest-last, matching the contact name.
-        if not terms:
-            return []
-        out, page = [], 1
-        while page <= 20:
-            batch = self._quotes(page=page)
-            if not batch:
-                break
-            for q in batch:
-                hay = (f"{q.get('QuoteNumber','')} {(q.get('Contact') or {}).get('Name','')} "
-                       f"{q.get('Reference','')}")
-                if _fuzzy(terms, hay):
-                    out.append(self._to_evidence(q))
-            page += 1
-        return out[-limit:] if out else []
+                out.extend(batch)
+                page += 1
+            Xero._cache = out
+        return Xero._cache
 
     def fetch(self, ref: str) -> Evidence | None:
         num = ref.split(":", 1)[1] if ":" in ref else ref
