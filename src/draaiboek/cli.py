@@ -313,11 +313,30 @@ def cmd_doctor(args) -> int:
     except Exception as e:  # noqa: BLE001
         check("drive sees documents", False, f"{type(e).__name__}: {str(e)[:80]}")
 
+    if cfg.template_doc_id:
+        try:
+            tpl, _ = svc.read(cfg.template_doc_id, record=False)
+            filled = len(tpl.data_rows())
+            check("template is empty", filled == 0,
+                  f"{tpl.title[:44]!r}" + (f" -- {filled} rows of a real event" if filled else ""))
+            if filled:
+                print("       ^ every new draaiboek is a copy of this document, so it would"
+                      "\n         start as a duplicate of that event. Build an empty one:"
+                      "\n           draaiboek template-from <url of a well-formatted draaiboek>")
+        except Exception as e:  # noqa: BLE001
+            check("template readable", False, str(e)[:80])
+
     if cfg.sandbox_doc_id:
         try:
             view, _ = svc.read(cfg.sandbox_doc_id)
             check("can read sandbox doc", True,
                   f"{len(view.data_rows())} rows, {len(view.sections)} sections")
+            # Testing happens here. If this is a document anyone relies on,
+            # the "never test on live docs" rule is already broken.
+            looks_real = len(view.data_rows()) > 3 and not any(
+                w in (view.title or "").lower() for w in ("sandbox", "test", "proef"))
+            check("sandbox is a throwaway doc", not looks_real,
+                  f"{view.title[:44]!r}" + (" -- looks like a real draaiboek" if looks_real else ""))
         except Exception as e:  # noqa: BLE001
             msg = str(e)
             check("can read sandbox doc", False,
