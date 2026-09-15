@@ -1,0 +1,31 @@
+[project]
+name = "draaiboek"
+version = "0.1.0"
+description = "Surgical Google Docs editing for Leeuwenbergh event runbooks. No renderer, no model, no regeneration."
+requires-python = ">=3.12"
+dependencies = [
+  "mcp>=1.2",          # works with 1.x (FastMCP) and 2.x (MCPServer)
+  "pydantic>=2.7",
+  "PyYAML>=6.0",
+  "pypdf>=5.0",          # text out of attached floor plans, riders and quotes
+  "google-api-python-client>=2.120",
+  "google-auth>=2.29",
+  "google-auth-oauthlib>=1.2",
+]
+
+[project.scripts]
+draaiboek = "draaiboek.cli:main"
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src", "tests"]
+testpaths = ["tests"]

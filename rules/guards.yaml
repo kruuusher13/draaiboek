@@ -1,0 +1,80 @@
+# Mechanical rules. These are ENFORCED IN CODE -- a write that trips a `block`
+# rule is refused at the boundary and never reaches Google. Editing this file
+# changes behaviour immediately; no redeploy, no code change.
+#
+# severity: block -> the whole edit batch is refused
+#           warn  -> applied, but surfaced to the caller and recorded
+
+locked_sections:
+  # Larissa's own space. Florentine never writes here.
+  - Bijzonderheden
+
+forbidden:
+  - name: financials
+    severity: block
+    # "kan je geen prijzen in het draaiboek noemen ... LOCK THIS IN!" (4 sep 2026)
+    # Money, always -- a currency symbol or an amount.
+    # NB: 'nacalculatie' is deliberately absent; she requires that word.
+    pattern: '(?i)(€|\$|\beur\s*\d|\d+\s*(?:euro|eur)\b|\bprijs\w*|\baanbetaling\b|\bborg\b|\bbtw\b|\b(?:uur)?tarief\b|\b(?:in|ex)cl\.?\s*btw\b|\bp\.p\.\s*\d|\d+[.,]\d{2}\s*(?:p\.p\.|per persoon)|\bfacturatie\b|\bfactuurnummer\b)'
+    message: >-
+      No financials in a draaiboek. Prices, quotes, invoices, deposits and rates
+      live in ClickUp/Xero only. If the money matters operationally, phrase it
+      without the number (e.g. "drankjes op nacalculatie").
+
+  - name: financials_with_amount
+    severity: block
+    requires_number: true
+    # These words are fine on their own -- "akkoord op de offerte ontvangen" is
+    # a status, not a price; "incl. transport" describes goods. They are only
+    # financial when an amount sits next to them in the same cell.
+    pattern: '(?i)(\boffert\w+|\bfactu(?:ur|ren|ratie)\w*|\bkosten\b|\bbedrag\b|\bdeposit\w*|\binvoice\b|\bomzet\b)'
+    message: >-
+      This looks like a financial figure. The word itself is fine, but not with an
+      amount beside it -- money lives in ClickUp/Xero, never in the draaiboek.
+
+  - name: source_citation
+    severity: block
+    # Sources are internal validation. They never appear in the document.
+    pattern: '(?i)(\(\s*bron\b|\bbron\s*:|\bsource\s*:|\bQU-\d{3,}|\bvolgens de mail\b|\bzie mail\b|\bper e-?mail van\b|\bcf\.\s)'
+    message: >-
+      No source citations in the doc. Provenance belongs in the `source` field
+      of the op (it is recorded in the ledger), never in a cell.
+
+  - name: quote_boilerplate
+    severity: warn
+    # "Dit staat standaard in onze quote en is niet specifiek met de klant
+    #  afgesproken" (13 sep 2026) -- do not repeat standard quote text.
+    pattern: '(?i)(gehele verduistering mogelijk|minimum\s*4\s*uur|standaard inbegrepen|zoals omschreven in de offerte)'
+    message: >-
+      This looks like standard quote boilerplate. Larissa: only put things in the
+      draaiboek that were specifically agreed for THIS event, not text that is
+      already in every quote we send.
+
+  - name: invented_hedging
+    severity: warn
+    # "Ga geen dingen verzinnen!" -- hedged language is the tell of a guess.
+    pattern: '(?i)(waarschijnlijk|vermoedelijk|ongeveer rond|naar schatting|ik denk dat|mogelijk rond)'
+    message: >-
+      Hedged wording suggests you are guessing. If it is not explicit in the
+      source, it belongs in Open Punten as a question, not in the schedule.
+
+lexicon:
+  # Wrong word -> required word. Word-boundary matched, so "Halve
+  # Oudejaarsconference" is untouched while "in de hal" is refused.
+  - wrong: '(?i)\bhal(?:len)?\b'
+    right: Foyer
+    severity: block
+    message: 'The entrance area is always "Foyer", never "Hal".'
+  - wrong: '(?i)\bgenodigden?\b'
+    right: Gasten
+    severity: block
+    message: 'Always "Gasten", never "Genodigden" -- especially for funerals.'
+
+# Rows Larissa has deleted by hand may not be re-added. Maintained
+# automatically by the snapshot differ; see ledger.tombstones.
+tombstones:
+  enabled: true
+  severity: block
+  message: >-
+    Larissa deleted this row by hand. Her edits are law -- it does not go back,
+    not on a rewrite, not on an update. If you believe it must return, ask her.

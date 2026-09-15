@@ -1,0 +1,943 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Draaiboek</title>
+<style>
+:root{
+  --bg:#f6f7f9; --panel:#fff; --ink:#15181d; --dim:#6b7280; --line:#e2e5ea; --soft:#f1f3f6;
+  --accent:#2d3c4f; --accent-ink:#fff; --ok:#137a4a; --warn:#9a6b00; --err:#a32020;
+  --email:#e3f0fc; --clickup:#efe6fb; --xero:#e6f5e9; --missive:#fdf0e3;
+  --add:#1a7f37; --upd:#b7791f; --del:#b42318; --mine:#2563eb;
+  --ins:#dafbe1; --edited:#fff4c2; --mark:#ffe58a; --note:#fff8e6; --note-line:#f0d58c; --hl:#e8f0fe;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1114; --panel:#16191e; --ink:#e6e8ec; --dim:#98a0ad; --line:#272c34; --soft:#1c2026;
+  --accent:#9fb4d0; --accent-ink:#0f1720; --ok:#4ade80; --warn:#fbbf24; --err:#f87171;
+  --email:#16293d; --clickup:#261a3d; --xero:#12301f; --missive:#3a2612;
+  --note:#2e240d; --note-line:#5c4a17; --mark:#6b5a12; --hl:#1e2a3a;
+}}
+:root[data-theme="dark"]{
+  --bg:#0f1114; --panel:#16191e; --ink:#e6e8ec; --dim:#98a0ad; --line:#272c34; --soft:#1c2026;
+  --accent:#9fb4d0; --accent-ink:#0f1720; --ok:#4ade80; --warn:#fbbf24; --err:#f87171;
+  --email:#16293d; --clickup:#261a3d; --xero:#12301f; --missive:#3a2612;
+  --note:#2e240d; --note-line:#5c4a17; --mark:#6b5a12; --hl:#1e2a3a;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif}
+a{color:inherit}
+button{padding:8px 14px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);font:inherit;cursor:pointer}
+button:hover:not(:disabled){border-color:var(--dim)}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:transparent;font-weight:600}
+button.big{padding:12px 18px;font-size:15px;width:100%}
+button.link{border:0;background:none;padding:0;color:var(--accent);text-decoration:underline}
+button:disabled{opacity:.5;cursor:default}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input[type=search],input[type=text],textarea{padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit}
+textarea{width:100%;resize:vertical}
+[hidden]{display:none!important}
+.dim{color:var(--dim)} .small{font-size:12.5px}
+.spin{display:inline-block;width:12px;height:12px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:s .7s linear infinite;vertical-align:-2px;margin-right:7px}
+@keyframes s{to{transform:rotate(360deg)}}
+.empty{padding:40px 16px;color:var(--dim);text-align:center}
+.tag{font-size:11px;padding:1px 8px;border-radius:9px;background:var(--bg);border:1px solid var(--line);color:var(--dim);white-space:nowrap}
+.tag.email{background:var(--email)} .tag.clickup{background:var(--clickup)} .tag.xero{background:var(--xero)} .tag.missive{background:var(--missive)}
+.tag.green{color:var(--ok);border-color:currentColor} .tag.red{color:var(--err);border-color:currentColor} .tag.blue{color:var(--accent);border-color:currentColor}
+
+header{background:var(--panel);border-bottom:1px solid var(--line);padding:0 18px;display:flex;gap:4px;align-items:center;position:sticky;top:0;z-index:20;height:50px}
+header .brand{font-weight:700;letter-spacing:.02em;margin-right:14px;cursor:pointer;background:none;border:0;padding:0;font-size:15px}
+header nav button{border:0;background:none;color:var(--dim);font-weight:600;padding:8px 12px}
+header nav button[aria-current=page]{color:var(--ink);background:var(--soft)}
+header .conn{margin-left:auto;font-size:12px;color:var(--dim);display:flex;gap:10px}
+header .conn .bad{color:var(--err)}
+main{max-width:1500px;margin:0 auto;padding:18px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.card-title{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);font-weight:650;padding:12px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
+.card-title .right{margin-left:auto;text-transform:none;letter-spacing:0;font-weight:400}
+
+/* home */
+.home{max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+.home h1{font-size:22px;margin:4px 0 0}
+.searchrow{display:flex;gap:8px}
+.searchrow input{flex:1}
+.row{display:flex;gap:14px;align-items:center;width:100%;text-align:left;padding:12px 16px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:none}
+.row:last-child{border-bottom:0}
+.row:hover{background:var(--bg)}
+.row .date{width:118px;flex:none;color:var(--dim);font-size:13px}
+.row .name{font-weight:600;flex:1;min-width:0}
+.row .badges{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.row.dimmed{opacity:.5}
+.waiting .row .name::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--mine);margin-right:8px;vertical-align:1px}
+
+/* event */
+.topbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.topbar h1{font-size:19px;margin:0;min-width:0}
+.topbar .spacer{flex:1}
+.tabs{display:flex;gap:4px;margin-bottom:14px;border-bottom:1px solid var(--line)}
+.attwrap{display:inline-flex;align-items:stretch;margin:0 6px 6px 0}
+.attwrap .att{margin:0}
+.attwrap .att:first-child{border-top-right-radius:0;border-bottom-right-radius:0}
+.att.text{border-top-left-radius:0;border-bottom-left-radius:0;border-left:0;
+  font-size:11px;padding-left:9px;padding-right:9px;font-weight:600;opacity:.85}
+.att.text:hover{opacity:1}
+.callhead{display:flex;align-items:baseline;gap:12px;margin:0 0 12px}
+.callhead h2{margin:0;font-size:15px}
+.callcard{border:1px solid var(--line);border-radius:10px;margin-bottom:10px;background:var(--panel)}
+.callcard.allDone{opacity:.5}
+.callcard header{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;
+  padding:11px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.callbtn{flex:none;text-decoration:none;font-weight:600;font-size:13px;padding:8px 14px;
+  border-radius:8px;background:var(--accent);color:#fff;white-space:nowrap}
+.callbtn:hover{filter:brightness(1.1)}
+.tasks{list-style:none;margin:0;padding:6px 0}
+.tasks li{display:flex;gap:9px;align-items:flex-start;padding:7px 14px}
+.tasks li+li{border-top:1px solid var(--line)}
+.tasks li.done span{text-decoration:line-through;opacity:.55}
+.tasks label{display:flex;gap:9px;align-items:flex-start;cursor:pointer;flex:1}
+.tasks input{margin-top:2px;flex:none;width:16px;height:16px}
+.small{font-size:11.5px;margin-top:3px}
+.tab{border:0;border-bottom:2px solid transparent;border-radius:0;background:none;color:var(--dim);font-weight:600;padding:8px 14px}
+.tab[aria-selected=true]{color:var(--ink);border-bottom-color:var(--accent)}
+.work{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:16px;align-items:start}
+@media (max-width:1100px){.work{grid-template-columns:minmax(0,1fr)}}
+
+/* the draaiboek, in her layout */
+.docwrap{overflow-x:auto;background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:16px}
+.hint{font-size:13px;color:var(--dim);margin:0 0 10px}
+.sheet{background:#fff;color:#111;max-width:1100px;margin:0 auto;padding:28px 30px 34px 12px;box-shadow:0 1px 3px rgba(0,0,0,.14);font-family:Calibri,'Segoe UI',system-ui,sans-serif;min-width:720px}
+.sheet h2{font-size:21px;margin:0 0 16px 40px;font-weight:600}
+.dt{width:100%;border-collapse:collapse;margin-bottom:16px;font-size:13px;table-layout:fixed}
+.dt td{border:1px solid #d7dae0;padding:5px 8px;vertical-align:top;word-wrap:break-word;white-space:pre-wrap}
+.dt td.g{width:40px;border:0!important;background:transparent!important;padding:3px 4px 0 0;text-align:right;vertical-align:top;white-space:nowrap}
+.dt tr.band td:not(.g){background:#2d3c4f;color:#fff;font-weight:600;letter-spacing:.06em;text-transform:uppercase;font-size:12px;padding:7px 8px}
+.dt tr.header td:not(.g){background:#eff0f1;font-weight:600;font-size:11px;color:#374151;letter-spacing:.05em;text-transform:uppercase}
+.dt .tools{visibility:hidden;display:inline-flex;gap:2px}
+.dt tr:hover .tools,.dt tr:focus-within .tools{visibility:visible}
+.tool{width:18px;height:18px;padding:0;border-radius:4px;font-size:12px;line-height:1;display:inline-grid;place-items:center;background:#fff;color:#4b5563;border:1px solid #d7dae0}
+.dt [contenteditable]{cursor:text}
+.dt [contenteditable]:hover{box-shadow:inset 0 0 0 1px #9fb4d0}
+.dt td.edited{background:var(--edited)!important}
+.dt tr.p-add td:nth-child(2){box-shadow:inset 4px 0 0 var(--add)}
+.dt tr.p-upd td:nth-child(2){box-shadow:inset 4px 0 0 var(--upd)}
+.dt tr.p-del td:nth-child(2){box-shadow:inset 4px 0 0 var(--del)}
+.dt tr.mine td:nth-child(2){box-shadow:inset 4px 0 0 var(--mine)}
+.dt tr.off td:not(.g){opacity:.35}
+.dt tr.p-del:not(.off) td:not(.g),.dt tr.removed td:not(.g){text-decoration:line-through;color:#9ca3af}
+.dt tr.flash td:not(.g){animation:flash 1.6s ease-out}
+@keyframes flash{0%,40%{background:#fff3a0}}
+.dt del{color:#b42318} .dt ins{background:#dafbe1;text-decoration:none;border-radius:2px;padding:0 2px}
+.catsel{font-size:11px;padding:1px 4px;border-radius:5px;background:#fff;color:#111;border:1px solid #d7dae0}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:#4b5563;border-top:1px solid #e5e7eb;padding-top:12px;margin-left:40px}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend i{width:13px;height:13px;border:1px solid #c9ccd2;display:inline-block}
+.legend i.bar{width:4px;border:0}
+
+/* sidebar */
+.side{position:sticky;top:64px;display:flex;flex-direction:column;max-height:calc(100vh - 80px)}
+.side .scroll{overflow:auto;flex:1}
+.side .foot{padding:12px 16px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:8px;align-items:center}
+.group{border-bottom:1px solid var(--line)}
+.group>h3{margin:0;padding:10px 16px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);font-weight:650;background:var(--soft);display:flex;gap:8px;align-items:center}
+.group>h3 .right{margin-left:auto;text-transform:none;letter-spacing:0;font-weight:400}
+.chg{padding:12px 16px;border-bottom:1px solid var(--line);border-left:4px solid transparent}
+.chg:last-child{border-bottom:0}
+.chg.add{border-left-color:var(--add)} .chg.upd{border-left-color:var(--upd)} .chg.del{border-left-color:var(--del)}
+.chg.off{opacity:.55}
+.chg:hover{background:var(--hl)}
+.chg .head{display:flex;gap:8px;align-items:center;margin-bottom:4px}
+.chg .kind{font-weight:650}
+.switch{margin-left:auto;display:flex;gap:6px;align-items:center;font-size:12.5px;color:var(--dim);cursor:pointer;user-select:none}
+.switch input{width:18px;height:18px;accent-color:var(--ok);cursor:pointer}
+.chg .what{font-size:13px;margin:2px 0 6px;overflow-wrap:anywhere}
+.chg .why{font-size:13px}
+.chg .src{font-size:12.5px;color:var(--dim);margin-top:4px}
+blockquote{margin:4px 0 0;padding:1px 0 1px 9px;border-left:3px solid var(--line);color:var(--ink);font-size:12.5px;white-space:pre-wrap}
+del{color:var(--del)} ins{background:var(--ins);color:#15181d;text-decoration:none;border-radius:2px;padding:0 2px}
+.q{padding:10px 16px;border-bottom:1px solid var(--line)}
+.q:last-child{border-bottom:0}
+.q .t{font-weight:600;font-size:13px} .q .v{font-size:13px;margin-bottom:6px}
+.q textarea{min-height:38px;font-size:13px;padding:7px 9px}
+.mine-item{display:flex;gap:8px;padding:8px 16px;border-bottom:1px solid var(--line);font-size:13px;align-items:baseline}
+.mine-item:last-child{border-bottom:0}
+.mine-item .x{flex:1;min-width:0;overflow-wrap:anywhere}
+
+/* sources */
+.srcgrid{display:grid;grid-template-columns:360px minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:1000px){.srcgrid{grid-template-columns:minmax(0,1fr)}}
+.item{display:block;width:100%;text-align:left;padding:10px 16px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:none;border-left:3px solid transparent}
+.item:hover{background:var(--bg)}
+.item[aria-current=true]{border-left-color:var(--accent);background:var(--bg)}
+.item .t{font-weight:600;overflow-wrap:anywhere}
+.item .m{color:var(--dim);font-size:12px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:2px}
+.reader .meta{padding:12px 16px;border-bottom:1px solid var(--line)}
+.reader .meta .title{font-weight:650;font-size:15px}
+.reader section{padding:12px 16px;border-bottom:1px solid var(--line)}
+.reader h4{margin:0 0 8px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+.atts{display:flex;gap:8px;flex-wrap:wrap}
+.att{display:flex;gap:6px;align-items:center;padding:6px 10px;border-radius:8px;background:var(--bg)}
+.att[aria-pressed=true]{border-color:var(--accent)}
+.viewer{margin-top:10px;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#f3f4f6}
+.viewer iframe{width:100%;height:72vh;border:0;display:block}
+.viewer img{display:block;max-width:100%;margin:0 auto}
+.comment{border-left:3px solid var(--note-line);background:var(--note);border-radius:0 8px 8px 0;padding:8px 10px;margin-bottom:8px;font-size:13px}
+.comment b span{color:var(--dim);font-weight:400;margin-left:6px}
+pre.body{margin:0;padding:16px;white-space:pre-wrap;word-wrap:break-word;font:12.5px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace}
+pre.plain{margin:4px 0 0;white-space:pre-wrap;font:13px/1.5 -apple-system,system-ui,sans-serif}
+mark{background:var(--mark);color:inherit;border-radius:2px}
+
+/* rules */
+.rules{max-width:980px;margin:0 auto}
+.md{padding:6px 22px 22px}
+.md h1{font-size:20px} .md h2{font-size:16px;margin-top:22px} .md h3{font-size:14px}
+.md table{border-collapse:collapse;margin:8px 0;width:100%;font-size:13px}
+.md td,.md th{border:1px solid var(--line);padding:5px 9px;text-align:left;vertical-align:top}
+.md th{background:var(--soft)}
+.md blockquote{color:var(--dim)}
+.md code{background:var(--soft);padding:0 4px;border-radius:4px}
+.md hr{border:0;border-top:1px solid var(--line);margin:16px 0}
+.editor textarea{min-height:70vh;font:13px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;border:0;border-radius:0;padding:18px 22px;background:var(--panel)}
+
+/* dialog */
+dialog{border:0;border-radius:14px;padding:0;width:min(640px,94vw);max-height:86vh;background:var(--panel);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.3)}
+dialog::backdrop{background:rgba(0,0,0,.4)}
+.dlg-head{padding:16px 20px;border-bottom:1px solid var(--line);font-weight:650;font-size:16px}
+.dlg-body{padding:14px 20px;overflow:auto;max-height:60vh}
+.dlg-foot{padding:12px 20px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end;align-items:center}
+.line{display:flex;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px;align-items:baseline}
+.line:last-child{border-bottom:0}
+.line .ic{width:18px;flex:none;font-weight:700}
+.line .ic.ok{color:var(--ok)} .line .ic.bad{color:var(--err)}
+.msg{background:var(--note);border:1px solid var(--note-line);border-radius:8px;padding:8px 12px;font-size:13px;margin:8px 0}
+.msg.err{background:color-mix(in srgb,var(--err) 10%,transparent);border-color:color-mix(in srgb,var(--err) 40%,transparent)}
+.msg.ok{background:color-mix(in srgb,var(--ok) 12%,transparent);border-color:transparent}
+</style>
+
+<header>
+  <button class="brand" data-go="/">Draaiboek</button>
+  <nav><button data-go="/" id="nav-events">Evenementen</button><button data-go="/rules" id="nav-rules">Regels</button></nav>
+  <div class="conn" id="conn"></div>
+</header>
+<main id="app"><div class="empty"><span class="spin"></span>Laden…</div></main>
+<dialog id="dlg"><div class="dlg-head" id="dlgHead"></div><div class="dlg-body" id="dlgBody"></div><div class="dlg-foot" id="dlgFoot"></div></dialog>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const CATS = {techniek:['Techniek & Media','#f4cccc'], hospitality:['Hospitality & Catering','#d9ead3'], inrichting:['Inrichting & Logistiek','#cfe2f3'], algemeen:['Algemeen','#ffffff']};
+const KIND = {add_row:['New row','add'], update_row:['Change','upd'], remove_row:['Remove row','del'], replace_text:['Replace everywhere','upd']};
+const first = vals => (vals || []).find(v => v && v.trim()) || '';
+const plural = (n, a, b) => `${n} ${n === 1 ? a : b}`;
+const when = w => {
+  if (!w) return '';
+  if (/^\d{12,}$/.test(String(w))) return new Date(+w).toLocaleDateString('nl-NL', {weekday:'short', day:'numeric', month:'short'});
+  const d = new Date(w); return isNaN(d) ? String(w).slice(0, 25) : d.toLocaleDateString('nl-NL', {day:'numeric', month:'short', year:'numeric'});
+};
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+async function api(path, body){
+  const r = await fetch(path, body === undefined ? {} : {method:'POST', headers:{'Content-Type':'application/json','X-Draaiboek':'1'}, body:JSON.stringify(body)});
+  if (r.status === 401) { location.href = '/login?next=' + encodeURIComponent(location.pathname + location.hash); throw new Error('Signed out'); }
+  const j = await r.json().catch(() => ({error:'Unexpected response.'}));
+  if (!r.ok || (j.error && !j.ok)) { const e = new Error(j.error || `HTTP ${r.status}`); e.data = j; throw e; }
+  return j;
+}
+
+// ================================================================ state
+const S = {
+  events: null, proposals: [], hideCancelled: true, search: '',
+  event: null, doc: null, docError: null, tab: 'doc',
+  sources: null, sourcesFor: null, selected: null, highlight: null,
+  include: new Set(), propEdits: {}, cells: {}, expect: {}, adds: [], removes: {}, answers: {},
+  rulesText: null, editingRules: false,
+};
+function resetWork(){
+  S.include = new Set((S.doc?.proposal?.edits || []).map(e => e.index));
+  S.propEdits = {}; S.cells = {}; S.expect = {}; S.adds = []; S.removes = {}; S.answers = {};
+}
+
+// ================================================================ routing (back button works)
+let lastHash = location.hash, skipGuard = false;
+function go(path){ location.hash = '#' + path; }
+function dirty(){ return S.doc && pendingCount() > 0; }
+window.addEventListener('hashchange', () => {
+  const leavingWork = /^#\/(event|doc)\//.test(lastHash) && lastHash.split('?')[0] !== location.hash.split('?')[0];
+  if (leavingWork && !skipGuard && dirty() && !confirm('You have changes that are not deployed yet. Leave and lose them?')) {
+    skipGuard = true; location.hash = lastHash; return;
+  }
+  skipGuard = false; lastHash = location.hash; route();
+});
+window.addEventListener('beforeunload', e => { if (dirty()) { e.preventDefault(); e.returnValue = ''; } });
+document.querySelectorAll('[data-go]').forEach(b => b.onclick = () => go(b.dataset.go));
+
+async function route(){
+  const h = location.hash.replace(/^#/, '') || '/';
+  $('#nav-events').setAttribute('aria-current', h === '/' || /^\/(event|doc)\//.test(h) ? 'page' : 'false');
+  $('#nav-rules').setAttribute('aria-current', h === '/rules' ? 'page' : 'false');
+  let m;
+  if (h === '/rules') return viewRules();
+  if ((m = h.match(/^\/event\/([^?]+)/))) return viewEvent({ref: decodeURIComponent(m[1])});
+  if ((m = h.match(/^\/doc\/([^?]+)/))) return viewEvent({doc: decodeURIComponent(m[1])});
+  return viewHome();
+}
+
+async function connections(){
+  try {
+    const {sources} = await api('/api/sources');
+    const bad = Object.entries(sources).filter(([, s]) => !s.configured);
+    $('#conn').innerHTML = bad.length
+      ? bad.map(([n, s]) => `<span class="bad" title="${esc(s.error || '')}">● ${esc(n)} niet verbonden</span>`).join('')
+      : '<span>● all sources connected</span>';
+  } catch {}
+}
+
+// ================================================================ home: events
+async function viewHome(){
+  document.title = 'Draaiboek';
+  const app = $('#app');
+  app.innerHTML = `<div class="home">
+    <h1>Evenementen</h1>
+    <div class="searchrow"><input type="search" id="search" placeholder="Zoek een evenement — een naam, of een datum zoals 26 september" value="${esc(S.search)}"><button class="primary" id="searchGo">Zoeken</button>
+      ${S.search ? '<button id="clear">Komende evenementen</button>' : ''}</div>
+    <div id="waiting"></div>
+    <div class="card"><div class="card-title">${S.search ? `Events matching “${esc(S.search)}”` : 'Upcoming'}<span class="right" id="hideBox"></span></div>
+      <div id="events"><div class="empty"><span class="spin"></span>Evenementen laden uit ClickUp…</div></div></div>
+  </div>`;
+  const find = () => { S.search = $('#search').value.trim(); S.events = null; viewHome(); };
+  $('#searchGo').onclick = find; $('#search').onkeydown = e => { if (e.key === 'Enter') find(); };
+  if ($('#clear')) $('#clear').onclick = () => { S.search = ''; S.events = null; viewHome(); };
+  try {
+    const [ev, pr] = await Promise.all([S.events ? {events: S.events} : api('/api/events?q=' + encodeURIComponent(S.search)), api('/api/proposals')]);
+    S.events = ev.events; S.proposals = pr.proposals;
+  } catch(e) { $('#events').innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+  renderHome();
+}
+
+function eventDate(e){
+  const m = (e.title || '').match(/^(\d{4})\/(\d{2})\/(\d{2})/);
+  return m ? new Date(+m[1], +m[2] - 1, +m[3]).toLocaleDateString('nl-NL', {weekday:'short', day:'numeric', month:'short'}) : when(e.due);
+}
+const eventName = t => (t || '').replace(/^\d{4}\/\d{2}\/\d{2}(\s*[+&]\s*\d{1,2})*\s*·\s*/, '').trim() || t;
+
+function renderHome(){
+  const open = S.proposals.filter(p => p.status === 'open');
+  const waitingDocs = new Set(open.map(p => p.doc_id));
+  $('#waiting').innerHTML = open.length ? `<div class="card waiting"><div class="card-title">Wacht op jou</div>
+    ${open.map(p => `<button class="row" data-doc="${esc(p.doc_id)}"><span class="date">${esc(when(p.created_at))}</span>
+      <span class="name">${esc(p.title || p.doc_id)}</span><span class="badges"><span class="tag blue">Hermes: ${plural(p.edits, 'change', 'changes')}</span></span></button>`).join('')}</div>` : '';
+  const cancelled = S.events.filter(e => e.cancelled).length;
+  $('#hideBox').innerHTML = cancelled ? `<label class="small"><input type="checkbox" id="hideC" ${S.hideCancelled ? 'checked' : ''}> ${cancelled} geannuleerde verbergen</label>` : '';
+  if ($('#hideC')) $('#hideC').onchange = e => { S.hideCancelled = e.target.checked; renderHome(); };
+  const list = S.events.filter(e => !(S.hideCancelled && e.cancelled));
+  $('#events').innerHTML = list.length ? list.map(e => `<button class="row ${e.cancelled ? 'dimmed' : ''}" data-ref="${esc(e.ref)}">
+      <span class="date">${esc(eventDate(e))}</span><span class="name">${esc(eventName(e.title))}</span>
+      <span class="badges">${waitingDocs.has(e.doc_id) ? '<span class="tag blue">Hermes wacht</span>' : ''}
+        ${e.doc_id ? '<span class="tag green">draaiboek</span>' : '<span class="tag">geen draaiboek</span>'}
+        ${e.cancelled ? '<span class="tag red">geannuleerd</span>' : `<span class="tag">${esc(e.status)}</span>`}</span></button>`).join('')
+    : `<div class="empty">No events found${S.search ? ' — try a name or a date' : ''}.</div>`;
+  document.querySelectorAll('#events [data-ref]').forEach(b => b.onclick = () => { S.event = S.events.find(e => e.ref === b.dataset.ref); go('/event/' + encodeURIComponent(b.dataset.ref)); });
+  document.querySelectorAll('#waiting [data-doc]').forEach(b => b.onclick = () => go('/doc/' + encodeURIComponent(b.dataset.doc)));
+}
+
+// ================================================================ event
+async function viewEvent({ref, doc}){
+  const sameEvent = (ref && S.event?.ref === ref) || (doc && S.doc?.doc_id === doc && !ref);
+  if (!sameEvent || !S.doc) {
+    if (ref && S.event?.ref !== ref) {
+      S.event = (S.events || []).find(e => e.ref === ref) || null;
+      if (!S.event) { try { const ev = await api('/api/evidence?ref=' + encodeURIComponent(ref));
+        S.event = {ref, title: ev.title, due: ev.meta.due_date, status: ev.meta.status, doc_id: ev.meta.draaiboek_doc_id, quote_refs: ev.meta.quote_refs || [], cancelled: !!ev.meta.CANCELLED}; } catch { S.event = {ref, title: ref}; } }
+    }
+    if (doc) S.event = null;
+    S.doc = null; S.docError = null; S.sources = null; S.selected = null; S.tab = 'doc'; resetWork();
+  }
+  renderEventShell();
+  const docId = doc || S.event?.doc_id;
+  if (!S.doc && docId) await loadDoc(docId);
+  else if (!docId) renderTab();
+  if (!S.sources) loadSources();
+}
+
+function eventTitle(){ return S.event?.title || S.doc?.proposal?.title || S.doc?.title || 'Event'; }
+
+function renderEventShell(){
+  document.title = eventTitle() + ' · Draaiboek';
+  $('#app').innerHTML = `
+    <div class="topbar"><button id="back">← Evenementen</button>
+      <h1>${esc(S.event ? eventName(S.event.title) : eventTitle())}</h1>
+      ${S.event ? `<span class="dim">${esc(eventDate(S.event))}</span>` : ''}
+      ${S.event?.cancelled ? '<span class="tag red">geannuleerd — hier verandert niets</span>' : ''}
+      <span class="spacer"></span>
+      ${S.doc?.url ? `<a href="${esc(S.doc.url)}" target="_blank" rel="noopener noreferrer"><button>Openen in Google Docs ↗</button></a>` : ''}</div>
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" data-tab="doc" aria-selected="${S.tab === 'doc'}">Draaiboek</button>
+      <button class="tab" role="tab" data-tab="bellen" aria-selected="${S.tab === 'bellen'}">Bellen${S.doc && S.doc.calls_open ? ` (${S.doc.calls_open})` : ''}</button>
+      <button class="tab" role="tab" data-tab="sources" aria-selected="${S.tab === 'sources'}">Bronnen${S.sources ? ` (${S.sources.items.length})` : ''}</button>
+    </div>
+    <div id="tab"></div>`;
+  $('#back').onclick = () => go('/');
+  document.querySelectorAll('.tab').forEach(t => t.onclick = () => { S.tab = t.dataset.tab; renderEventShell(); renderTab(); });
+}
+
+function renderTab(){
+  if (S.tab === 'sources') return renderSources();
+  if (S.tab === 'bellen') return renderCalls();
+  return renderWork();
+}
+
+/* The call list. Larissa works the phone: a supplier, their number, and the
+   questions for that person underneath it. Ticks are per browser -- they are a
+   scratch pad for one sitting, never a claim about the document. */
+const doneKey = () => 'bellen:' + (S.doc ? S.doc.doc_id : '');
+function doneSet(){
+  try { return new Set(JSON.parse(localStorage.getItem(doneKey()) || '[]')); }
+  catch { return new Set(); }
+}
+function toggleDone(id){
+  const d = doneSet();
+  d.has(id) ? d.delete(id) : d.add(id);
+  try { localStorage.setItem(doneKey(), JSON.stringify([...d])); } catch {}
+  renderCalls();
+}
+
+function renderCalls(){
+  const doc = S.doc;
+  if (!doc || doc.error) {
+    $('#tab').innerHTML = `<div class="note">${esc(doc ? doc.error : 'Geen draaiboek geladen.')}</div>`;
+    return;
+  }
+  const calls = doc.calls || [];
+  if (!calls.length){
+    $('#tab').innerHTML = `<div class="empty">Niets meer op te vragen — alle punten zijn rond.</div>`;
+    return;
+  }
+  const done = doneSet();
+  const total = calls.reduce((n,t) => n + t.tasks.length, 0);
+  const left = calls.reduce((n,t) => n + t.tasks.filter(k => !done.has(k.text)).length, 0);
+
+  $('#tab').innerHTML = `
+    <div class="callhead">
+      <h2>Bellen &amp; regelen</h2>
+      <span class="muted">${left} van ${total} nog te doen</span>
+    </div>
+    ${calls.map(t => {
+      const open = t.tasks.filter(k => !done.has(k.text)).length;
+      const tel = t.phone ? t.phone.replace(/[^\d+]/g,'') : '';
+      return `
+      <section class="callcard${open ? '' : ' allDone'}">
+        <header>
+          <div>
+            <b>${esc(t.name)}</b>
+            ${t.role ? `<span class="muted"> · ${esc(t.role)}</span>` : ''}
+            ${t.members && t.members.length ? `<div class="muted small">${t.members.map(m =>
+                esc(m.name) + (m.phone ? ' · ' + esc(m.phone) : ' · nummer onbekend')).join('<br>')}</div>` : ''}
+          </div>
+          ${tel ? `<a class="callbtn" href="tel:${esc(tel)}">Bellen ${esc(t.phone)}</a>`
+                : t.phone_pending ? `<span class="pill warn">nummer nog opvragen</span>` : ''}
+        </header>
+        <ul class="tasks">
+          ${t.tasks.map(k => `
+            <li class="${done.has(k.text) ? 'done' : ''}">
+              <label>
+                <input type="checkbox" data-task="${esc(k.text)}" ${done.has(k.text) ? 'checked' : ''}>
+                <span>${esc(k.text)}</span>
+              </label>
+              ${k.kind === 'herinnering' ? `<span class="pill">vaste regel</span>` : ''}
+              ${k.kind === 'nummer' ? `<span class="pill warn">nummer</span>` : ''}
+            </li>`).join('')}
+        </ul>
+      </section>`;
+    }).join('')}`;
+
+  $('#tab').querySelectorAll('input[data-task]').forEach(b =>
+    b.onchange = () => toggleDone(b.dataset.task));
+}
+
+async function loadDoc(docId, keepWork){
+  $('#tab').innerHTML = '<div class="empty"><span class="spin"></span>Draaiboek openen…</div>';
+  try {
+    const d = await api('/api/doc?doc=' + encodeURIComponent(docId));
+    if (d.error) throw new Error(d.error);
+    S.doc = d; S.docError = null; if (!keepWork) resetWork();
+  } catch(e) { S.doc = null; S.docError = e.message; }
+  renderEventShell(); renderTab();
+}
+
+// ================================================================ sources
+function sourceQuery(){
+  const t = eventTitle();
+  const date = (t.match(/^(\d{4}\/\d{2}\/\d{2})/) || [])[1];
+  const names = t.replace(/^[\d\/\s+·.\-]+/, '').replace(/[·&+|()]/g, ' ').replace(/\b(draaiboek|bruiloft)\b/gi, ' ').replace(/\s+/g, ' ').trim();
+  return {date, names};
+}
+
+async function loadSources(fresh){
+  const key = eventTitle();
+  S.sourcesFor = key;
+  if (S.tab === 'sources') $('#tab').innerHTML = '<div class="empty"><span class="spin"></span>Ophalen uit Gmail, Missive, ClickUp en Xero…</div>';
+  const {date, names} = sourceQuery();
+  const q = s => api(`/api/gather?limit=10&q=${encodeURIComponent(s)}${fresh ? '&fresh=1' : ''}`).catch(e => ({items:[], gaps:[{text: e.message}]}));
+  const calls = [];
+  if (date) calls.push(q(date));
+  if (names) calls.push(q(names));
+  (S.event?.quote_refs || []).forEach(r => calls.push(api(`/api/gather?kinds=xero&q=${encodeURIComponent(r)}`).catch(() => ({items:[]}))));
+  const results = await Promise.all(calls);
+  if (S.sourcesFor !== key) return;
+  const seen = new Set(), items = [];
+  const push = it => { if (!seen.has(it.ref)) { seen.add(it.ref); items.push(it); } };
+  if (S.event?.ref) push({ref: S.event.ref, kind:'clickup', label:'ClickUp', title: S.event.title, when: S.event.due, attachments:0, comments:0, labels:[]});
+  (S.doc?.proposal?.sources || []).forEach(push);
+  results.forEach(r => (r.items || []).forEach(push));
+  const problems = [...new Set(results.flatMap(r => (r.gaps || []).map(g => g.text)))];
+  S.sources = {items, problems};
+  const tabBtn = document.querySelector('.tab[data-tab=sources]'); if (tabBtn) tabBtn.textContent = `Sources (${items.length})`;
+  if (S.tab === 'sources') renderSources();
+}
+
+function groups(){
+  const order = [['clickup','ClickUp'], ['email','Gmail'], ['missive','Missive'], ['xero','Xero']];
+  return order.map(([k, label]) => {
+    const threads = {}, list = [];
+    for (const it of S.sources.items.filter(i => i.kind === k)) {
+      if (k === 'email' && it.thread) { if (threads[it.thread]) { threads[it.thread].members.push(it); continue; } threads[it.thread] = {...it, members:[it]}; list.push(threads[it.thread]); }
+      else list.push({...it, members:[it]});
+    }
+    return {k, label, list};
+  }).filter(g => g.list.length);
+}
+
+function renderSources(){
+  const tab = $('#tab');
+  if (!S.sources) { tab.innerHTML = '<div class="empty"><span class="spin"></span>Ophalen uit Gmail, Missive, ClickUp en Xero…</div>'; return; }
+  const gs = groups();
+  tab.innerHTML = `<div class="srcgrid">
+    <div class="card"><div class="card-title">Wat is gevonden<span class="right"><button class="link" id="refetch">opnieuw ophalen</button></span></div>
+      ${S.sources.problems.length ? `<div class="msg" style="margin:10px 14px">${S.sources.problems.map(esc).join('<br>')}</div>` : ''}
+      ${gs.length ? gs.map(g => `<div class="card-title" style="background:var(--soft)">${g.label} <span class="dim">${g.list.length}</span></div>` + g.list.map(it => {
+        const atts = it.members.reduce((n, m) => n + (m.attachments || 0), 0);
+        return `<button class="item" data-ref="${esc(it.ref)}" aria-current="${S.selected?.ref === it.ref}">
+          <div class="t">${esc(it.title || it.ref)}</div>
+          <div class="m">${it.when ? `<span>${esc(when(it.when))}</span>` : ''}${it.members.length > 1 ? `<span class="tag">${it.members.length} messages</span>` : ''}
+            ${atts ? `<span class="tag">📎 ${atts}</span>` : ''}${it.comments ? `<span class="tag">💬 ${it.comments}</span>` : ''}
+            ${(it.labels || []).slice(0, 1).map(l => `<span class="tag missive">${esc(l)}</span>`).join('')}</div></button>`; }).join('')).join('')
+        : '<div class="empty">Niets gevonden voor dit evenement.</div>'}
+    </div>
+    <div class="card reader" id="reader">${S.selected ? '' : '<div class="empty">Choose something on the left to read it — with its attachments and internal comments.</div>'}</div>
+  </div>`;
+  $('#refetch').onclick = () => { S.sources = null; loadSources(true); };
+  tab.querySelectorAll('.item').forEach(b => b.onclick = () => {
+    const it = gs.flatMap(g => g.list).find(x => x.ref === b.dataset.ref); S.selected = it; S.highlight = null; renderSources();
+  });
+  if (S.selected) openReader(S.selected);
+}
+
+function highlightText(body, quote){
+  if (!quote) return esc(body);
+  const words = quote.trim().split(/\s+/).map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const m = words.length ? new RegExp(words.join('\\s+'), 'i').exec(body) : null;
+  return m ? esc(body.slice(0, m.index)) + '<mark id="hit">' + esc(m[0]) + '</mark>' + esc(body.slice(m.index + m[0].length)) : esc(body);
+}
+
+async function openReader(it){
+  const box = $('#reader'), members = it.members || [it];
+  box.innerHTML = `${members.length > 1 ? `<div class="meta"><span class="small dim">${members.length} messages in this conversation:</span> ${members.map((m, i) =>
+      `<button class="tag" style="cursor:pointer" data-i="${i}">${esc(when(m.when) || 'message ' + (i + 1))}${m.attachments ? ' 📎' : ''}</button>`).join(' ')}</div>
+      <section id="threadAtts" hidden><h4>Alle bijlagen in dit gesprek</h4><div class="atts" id="threadAttList"></div><div id="threadViewer"></div></section>` : ''}
+    <div id="readbody"><div class="empty"><span class="spin"></span>Laden…</div></div>`;
+  box.querySelectorAll('[data-i]').forEach(b => b.onclick = () => read(members[+b.dataset.i].ref, members.length > 1));
+  read(members[0].ref, members.length > 1);
+  const withFiles = members.filter(m => m.attachments);
+  if (members.length > 1 && withFiles.length) {
+    const evs = await Promise.all(withFiles.map(m => api('/api/evidence?ref=' + encodeURIComponent(m.ref)).catch(() => null)));
+    const seen = new Set(), files = [];
+    evs.forEach(ev => (ev?.attachments || []).forEach((a, i) => { const k = a.filename + a.size;
+      if (!a.inline && !seen.has(k)) { seen.add(k); files.push({...a, i, ref: ev.ref, when: ev.when}); } }));
+    if (!files.length || !$('#threadAtts')) return;
+    $('#threadAtts').hidden = false;
+    $('#threadAttList').innerHTML = files.map((a, n) => `<button class="att" data-n="${n}">📎 <b>${esc(a.filename)}</b> <span class="dim small">${esc(when(a.when))}</span></button>`).join('');
+    $('#threadAttList').querySelectorAll('.att').forEach(b => b.onclick = () => showFile($('#threadViewer'), files[+b.dataset.n].ref, files[+b.dataset.n]));
+  }
+}
+
+function showFile(target, ref, a){
+  const url = `/api/attachment?ref=${encodeURIComponent(ref)}&i=${a.i}`, mime = a.mime || '';
+  target.innerHTML = `<div class="viewer">${mime === 'application/pdf' ? `<iframe src="${esc(url)}" title="bijlage"></iframe>`
+    : mime.startsWith('image/') && !mime.includes('svg') ? `<img src="${esc(url)}" alt="">` : `<div class="empty">Dit bestand kan hier niet getoond worden. <a href="${esc(url)}">Downloaden</a>.</div>`}</div>
+    <div class="small" style="text-align:right;margin-top:4px"><a href="${esc(url)}" target="_blank" rel="noopener">open in a new tab ↗</a></div>`;
+}
+
+async function read(ref, inThread){
+  const box = $('#readbody'); if (!box) return;
+  try {
+    const ev = await api('/api/evidence?ref=' + encodeURIComponent(ref));
+    const atts = (ev.attachments || []).map((a, i) => ({...a, i})), files = atts.filter(a => !a.inline), pics = atts.filter(a => a.inline);
+    const att = a => `<span class="attwrap"><button class="att" data-i="${a.i}" data-mime="${esc(a.mime)}">📎 <b>${esc(a.filename)}</b> <span class="dim small">${a.size ? Math.max(1, Math.round(a.size / 1024)) + ' kB' : ''}</span></button>${
+      a.readable ? `<button class="att text" data-text="${a.i}" title="Lees de tekst in dit bestand">tekst</button>` : ''}</span>`;
+    box.innerHTML = `<div class="meta"><div class="title">${esc(ev.title)}</div>
+        <div class="small dim"><span class="tag ${esc(ev.kind)}">${esc(ev.label)}</span> ${esc(when(ev.when))}
+        ${ev.url ? ` · <a href="${esc(ev.url)}" target="_blank" rel="noopener noreferrer">open in ${esc(ev.label)} ↗</a>` : ''}</div>
+        ${(ev.labels || []).length ? `<div style="margin-top:6px">${ev.labels.map(l => `<span class="tag missive">${esc(l)}</span>`).join(' ')}</div>` : ''}
+        ${ev.meta?.warning ? `<div class="msg">${esc(ev.meta.warning)}</div>` : ''}</div>
+      ${(files.length && !inThread) || pics.length ? `<section><h4>${inThread ? 'Afbeeldingen in dit bericht' : 'Bijlagen'}</h4><div class="atts">${inThread ? '' : files.map(att).join('')}</div>
+        ${pics.length ? `<details style="margin-top:6px"><summary class="dim small">${plural(pics.length, 'afbeelding', 'afbeeldingen')} in het bericht zelf (logo\u2019s, handtekeningen)</summary><div class="atts" style="margin-top:6px">${pics.map(att).join('')}</div></details>` : ''}
+        <div id="viewer"></div></section>` : ''}
+      ${(ev.comments || []).length ? `<section><h4>Interne opmerkingen</h4>${ev.comments.map(c => `<div class="comment"><b>${esc(c.author)}<span>${esc(c.when)}</span></b><pre class="plain">${esc(c.text)}</pre></div>`).join('')}</section>` : ''}
+      <pre class="body">${highlightText(ev.body || '', S.highlight)}</pre>`;
+    box.querySelectorAll('.att:not(.text)').forEach(b => b.onclick = () => showFile($('#viewer'), ref, {i: +b.dataset.i, mime: b.dataset.mime}));
+    box.querySelectorAll('.att.text').forEach(b => b.onclick = () => showAttachmentText($('#viewer'), ref, +b.dataset.text));
+    document.getElementById('hit')?.scrollIntoView({block:'center'});
+  } catch(e) { box.innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
+}
+
+/* What is inside the file, not just the file. A floor plan or a rider holds
+   the numbers the draaiboek needs; a scan holds none, and says so rather than
+   returning an empty box that reads as "nothing in it". */
+async function showAttachmentText(box, ref, i){
+  box.innerHTML = `<div class="empty"><span class="spin"></span>Tekst uit het bestand lezen…</div>`;
+  try {
+    const r = await api(`/api/attachment/text?ref=${encodeURIComponent(ref)}&i=${i}`);
+    if (!r.ok) {
+      box.innerHTML = `<div class="msg"><b>${esc(r.filename || 'Dit bestand')}</b><br>${esc(r.message)}</div>`;
+      return;
+    }
+    box.innerHTML = `<div class="meta"><div class="title">${esc(r.filename)}</div>
+      <div class="small dim">${r.chars.toLocaleString('nl-NL')} tekens · citeerbaar als <code>${esc(r.ref)}</code></div></div>
+      <pre class="body">${esc(r.text)}</pre>`;
+  } catch(e){ box.innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
+}
+
+function showSource(ref, quote){
+  const it = (S.sources?.items || []).find(i => i.ref === ref) || (S.doc?.proposal?.sources || []).find(i => i.ref === ref) || {ref, title: ref};
+  S.selected = {...it, members:[it]}; S.highlight = quote; S.tab = 'sources'; renderEventShell(); renderSources();
+}
+
+// ================================================================ the work: draaiboek + sidebar
+function maps(){
+  const m = {after:{}, upd:{}, del:{}, rep:[]};
+  (S.doc?.proposal?.edits || []).forEach(e => {
+    if (e.op === 'add_row' && e.anchor_row_id) (m.after[e.anchor_row_id] ||= []).push(e);
+    else if (e.op === 'update_row') m.upd[e.row_id] = e;
+    else if (e.op === 'remove_row') m.del[e.row_id] = e;
+    else if (e.op === 'replace_text') m.rep.push(e);
+  });
+  return m;
+}
+const findRow = rid => { for (const t of S.doc.tables) for (const r of t.rows) if (r.row_id === rid) return r; return null; };
+const tableOf = rid => S.doc.tables.find(t => t.rows.some(r => r.row_id === rid));
+const hermesQuestions = () => (S.doc?.proposal?.edits || []).filter(e => e.op === 'add_row' && /open\s*punten/i.test(e.section || ''));
+
+function renderWork(){
+  const tab = $('#tab');
+  if (!S.doc) {
+    tab.innerHTML = `<div class="card"><div class="empty" style="padding:50px 20px">
+      ${S.docError ? `<div class="msg err" style="display:inline-block;text-align:left;max-width:640px">${esc(S.docError)}</div><br><br>` : 'Aan dit evenement hangt in ClickUp nog geen draaiboek.<br><br>'}
+      <div style="display:inline-flex;gap:8px;width:min(560px,100%)"><input type="text" id="paste" placeholder="Plak hier de link van het draaiboek" style="flex:1"><button class="primary" id="pasteGo">Open</button></div></div></div>`;
+    const open = () => { const v = $('#paste').value.trim(); if (v) loadDoc(v); };
+    $('#pasteGo').onclick = open; $('#paste').onkeydown = e => { if (e.key === 'Enter') open(); };
+    return;
+  }
+  tab.innerHTML = `<div class="work"><div><p class="hint">Klik op een tekst om die aan te passen. Beweeg over een regel voor <b>+</b> (regel eronder toevoegen) en <b>×</b> (verwijderen).</p><div class="docwrap" id="docwrap"></div></div><div class="card side" id="side"></div></div>`;
+  renderSheet(); renderSide();
+}
+
+function renderSheet(){
+  const d = S.doc, M = maps(), box = $('#docwrap'); if (!box) return;
+  const scroll = box.scrollLeft;
+  const g = tools => `<td class="g"><span class="tools">${tools}</span></td>`;
+  const rowHtml = (t, r) => {
+    if (r.kind === 'band') return `<tr class="band">${g('')}<td colspan="${t.columns}">${esc(r.values[0])}</td></tr>`;
+    if (r.kind === 'header') return `<tr class="header">${g(`<button class="tool" data-add="${r.row_id}" title="Regel bovenaan toevoegen">+</button>`)}${r.values.map(v => `<td>${esc(v)}</td>`).join('')}</tr>`;
+    const u = M.upd[r.row_id], del = M.del[r.row_id], removed = r.row_id in S.removes;
+    const uOn = u && S.include.has(u.index), dOn = del && S.include.has(del.index);
+    const cls = [u ? 'p-upd' : '', del ? 'p-del' : '', (u && !uOn) || (del && !dOn) ? 'off' : '', removed ? 'removed' : ''].join(' ');
+    const q = d.questions.find(x => x.row_id === r.row_id), answer = S.answers['row:' + r.row_id];
+    const cells = r.values.map((v, c) => {
+      let shown = esc(v), ed = '';
+      if (uOn) { const after = (S.propEdits[u.index] || u.after || [])[c] ?? v; if (after !== v) shown = `${v ? `<del>${esc(v)}</del> ` : ''}<ins>${esc(after)}</ins>`; }
+      if (S.cells[r.row_id]?.[c] !== undefined) { shown = esc(S.cells[r.row_id][c]); ed = 'edited'; }
+      if (answer && q && q.answer_col === c) { shown = `<ins>${esc('Antwoord: ' + answer.trim())}</ins>`; }
+      const editable = !removed && !dOn;
+      return `<td ${r.bg ? `style="background:${esc(r.bg)}"` : ''} class="${ed}" ${editable ? `contenteditable="plaintext-only" data-row="${r.row_id}" data-col="${c}"` : ''}>${shown}</td>`;
+    }).join('');
+    const tools = removed ? `<button class="tool" data-unremove="${r.row_id}" title="Ongedaan maken">↺</button>`
+      : (u || del) ? '' : `<button class="tool" data-add="${r.row_id}" title="Regel hieronder toevoegen">+</button><button class="tool" data-remove="${r.row_id}" title="Regel verwijderen">×</button>`;
+    return `<tr class="${cls}" data-rid="${r.row_id}">${g(tools)}${cells}</tr>`;
+  };
+  const hermesRow = (t, e) => {
+    const on = S.include.has(e.index), vals = S.propEdits[e.index] || e.after || [], bg = CATS[e.category]?.[1] || '#fff';
+    return `<tr class="p-add ${on ? '' : 'off'}" data-edit="${e.index}">${g('')}${Array.from({length: t.columns}, (_, c) =>
+      `<td style="background:${bg}" class="${S.propEdits[e.index] ? 'edited' : ''}" ${on ? `contenteditable="plaintext-only" data-prop="${e.index}" data-col="${c}"` : ''}>${on && !S.propEdits[e.index] && vals[c] ? `<ins>${esc(vals[c])}</ins>` : esc(vals[c] || '')}</td>`).join('')}</tr>`;
+  };
+  const myRow = (t, a, i) => `<tr class="mine">${g(`<button class="tool" data-unadd="${i}" title="Deze nieuwe regel verwijderen">×</button>`)}${Array.from({length: t.columns}, (_, c) =>
+      `<td style="background:${CATS[a.category]?.[1]}" contenteditable="plaintext-only" data-mine="${i}" data-col="${c}">${esc(a.values[c] || '')}</td>`).join('')}</tr>
+    <tr><td class="g"></td><td colspan="${t.columns}" style="border:0;padding:0 0 6px;font-size:11px;color:#6b7280">colour
+      <select class="catsel" data-cat="${i}">${Object.entries(CATS).map(([k, [l]]) => `<option value="${k}" ${a.category === k ? 'selected' : ''}>${l}</option>`).join('')}</select></td></tr>`;
+  const tables = d.tables.map(t => {
+    let rows = '';
+    for (const r of t.rows) { rows += rowHtml(t, r); (M.after[r.row_id] || []).filter(e => !S.answers['p:' + e.index]).forEach(e => rows += hermesRow(t, e)); S.adds.forEach((a, i) => { if (a.after_row_id === r.row_id) rows += myRow(t, a, i); }); }
+    return `<table class="dt"><colgroup><col style="width:40px">${'<col>'.repeat(t.columns)}</colgroup>${rows}</table>`;
+  }).join('');
+  box.innerHTML = `<div class="sheet"><h2>${esc(d.title)}</h2>${tables}
+    <div class="legend">${Object.values(CATS).map(([l, c]) => `<span><i style="background:${c}"></i>${l}</span>`).join('')}
+      <span><i class="bar" style="background:var(--add)"></i>new from Hermes</span><span><i class="bar" style="background:var(--upd)"></i>changed by Hermes</span>
+      <span><i class="bar" style="background:var(--del)"></i>removed by Hermes</span><span><i class="bar" style="background:var(--mine)"></i>door jou toegevoegd</span><span><i style="background:var(--edited)"></i>door jou aangepast</span></div></div>`;
+  box.scrollLeft = scroll;
+  bindSheet();
+}
+
+function bindSheet(){
+  const box = $('#docwrap'), P = S.doc.proposal;
+  const refresh = () => { renderSheet(); renderSide(); };
+  const keepFocus = () => setTimeout(() => {
+    const a = document.activeElement, k = a?.dataset || {};
+    const sel = k.row ? `[data-row="${k.row}"][data-col="${k.col}"]` : k.prop ? `[data-prop="${k.prop}"][data-col="${k.col}"]` : k.mine ? `[data-mine="${k.mine}"][data-col="${k.col}"]` : null;
+    refresh(); if (sel) box.querySelector(sel)?.focus();
+  }, 0);
+  box.querySelectorAll('[data-add]').forEach(b => b.onclick = () => {
+    const rid = b.dataset.add; S.adds.push({after_row_id: rid, section: findRow(rid)?.section || '', values: Array(tableOf(rid).columns).fill(''), category:'algemeen'});
+    refresh(); box.querySelector(`[data-mine="${S.adds.length - 1}"]`)?.focus();
+  });
+  box.querySelectorAll('[data-remove]').forEach(b => b.onclick = () => { const rid = b.dataset.remove; S.removes[rid] = first(findRow(rid).values); delete S.cells[rid]; S.adds = S.adds.filter(a => a.after_row_id !== rid); refresh(); });
+  box.querySelectorAll('[data-unremove]').forEach(b => b.onclick = () => { delete S.removes[b.dataset.unremove]; refresh(); });
+  box.querySelectorAll('[data-unadd]').forEach(b => b.onclick = () => { S.adds.splice(+b.dataset.unadd, 1); refresh(); });
+  box.querySelectorAll('[data-cat]').forEach(s => s.onchange = () => { S.adds[+s.dataset.cat].category = s.value; refresh(); });
+  box.querySelectorAll('[contenteditable]').forEach(td => {
+    td.addEventListener('paste', e => { e.preventDefault(); document.execCommand('insertText', false, e.clipboardData.getData('text/plain')); });
+    td.addEventListener('focus', () => {
+      const c = +td.dataset.col;
+      if (td.dataset.row) { const r = findRow(td.dataset.row), u = maps().upd[td.dataset.row];
+        td.textContent = S.cells[r.row_id]?.[c] ?? (u && S.include.has(u.index) ? ((S.propEdits[u.index] || u.after)[c] ?? r.values[c]) : r.values[c]); }
+      else if (td.dataset.prop) { const e = P.edits[+td.dataset.prop]; td.textContent = (S.propEdits[e.index] || e.after)[c] || ''; }
+    });
+    td.addEventListener('blur', () => {
+      const c = +td.dataset.col, text = td.innerText.replace(/\n$/, '');
+      if (td.dataset.mine !== undefined) { S.adds[+td.dataset.mine].values[c] = text; renderSide(); return; }
+      if (td.dataset.prop !== undefined) { const e = P.edits[+td.dataset.prop], v = [...(S.propEdits[e.index] || e.after)]; if ((v[c] || '') !== text) { v[c] = text; S.propEdits[e.index] = v; } return keepFocus(); }
+      const rid = td.dataset.row, r = findRow(rid), u = maps().upd[rid];
+      if (u && S.include.has(u.index)) { const v = [...(S.propEdits[u.index] || u.after)]; if ((v[c] ?? '') !== text) { v[c] = text; S.propEdits[u.index] = v; } return keepFocus(); }
+      if (text === (r.values[c] || '')) { if (S.cells[rid]) { delete S.cells[rid][c]; if (!Object.keys(S.cells[rid]).length) delete S.cells[rid]; } }
+      else { (S.cells[rid] ||= {})[c] = text; if (!(rid in S.expect)) S.expect[rid] = first(r.values); }
+      keepFocus();
+    });
+  });
+}
+
+function changeText(e){
+  if (e.op === 'add_row') return `<ins>${esc((S.propEdits[e.index] || e.after).filter(Boolean).join(' · '))}</ins>`;
+  if (e.op === 'update_row') return (S.propEdits[e.index] || e.after || []).map((v, c) => v === (e.before || [])[c] ? '' : `${(e.before || [])[c] ? `<del>${esc(e.before[c])}</del> ` : ''}<ins>${esc(v)}</ins>`).filter(Boolean).join('<br>');
+  if (e.op === 'remove_row') return `<del>${esc((e.before || []).filter(Boolean).join(' · '))}</del>`;
+  if (e.op === 'replace_text') return `<del>${esc(e.find)}</del> → <ins>${esc(e.replace)}</ins> <span class="dim">(${e.occurrences}×)</span>`;
+  return '';
+}
+
+function sourceText(e){
+  const s = e.source; if (!s) return '';
+  const who = s.kind === 'larissa' ? 'You said it' : s.kind === 'house_rule' ? 'House rule' : s.kind === 'doc' ? 'Already in the draaiboek' : esc(e.source_label || s.kind);
+  return `<div class="src">From: ${who}${e.source_openable ? ` · <button class="link" data-src="${esc(s.ref)}" data-quote="${esc(s.quote)}">${esc(e.source_title || 'open')}</button>` : ''}<blockquote>${esc(s.quote)}</blockquote></div>`;
+}
+
+function renderSide(){
+  const side = $('#side'); if (!side) return;
+  const d = S.doc, P = d.proposal;
+  const changes = (P?.edits || []).filter(e => !hermesQuestions().includes(e));
+  const hq = hermesQuestions(), mine = myList(), n = pendingCount();
+  side.innerHTML = `<div class="scroll">
+    ${P ? `<div class="group"><h3>Wijzigingen van Hermes<span class="right">${changes.filter(e => S.include.has(e.index)).length} of ${changes.length} kept</span></h3>
+      ${P.stale ? '<div class="msg" style="margin:10px 16px">The draaiboek changed after Hermes wrote this. Changes that no longer fit will be stopped when you deploy.</div>' : ''}
+      ${changes.map(e => { const [label, cls] = KIND[e.op] || [e.op, 'upd']; const on = S.include.has(e.index);
+        return `<div class="chg ${cls} ${on ? '' : 'off'}" data-row-link="${esc(e.row_id || e.anchor_row_id || '')}">
+          <div class="head"><span class="kind">${label}</span><span class="dim small">${esc(e.section || '')}</span>
+            <label class="switch">${on ? 'keep' : 'leave out'}<input type="checkbox" data-keep="${e.index}" ${on ? 'checked' : ''}></label></div>
+          <div class="what">${changeText(e)}</div>
+          <div class="why"><b>Why:</b> ${esc(e.reason || '—')}</div>${sourceText(e)}</div>`; }).join('') || '<div class="q dim">Geen wijzigingen.</div>'}</div>` : ''}
+    <div class="group"><h3>Open punten<span class="right">${Object.keys(S.answers).length} beantwoord</span></h3>
+      ${hq.map(e => `<div class="q"><div class="t">${esc(e.after[0] || 'Question')} <span class="tag blue">new from Hermes</span></div><div class="v">${esc(e.after[1] || '')}</div>
+        <textarea data-answer="p:${e.index}" placeholder="Jouw antwoord, als je het weet">${esc(S.answers['p:' + e.index] || '')}</textarea>
+        <div class="small dim">${esc(e.reason || '')}</div></div>`).join('')}
+      ${d.questions.map(q => `<div class="q"><div class="t">${esc(q.values[0] || 'Question')}</div><div class="v">${esc(q.values[1] || '')}${q.values[2] ? `<div class="small dim">${esc(q.values[2])}</div>` : ''}</div>
+        <textarea data-answer="row:${q.row_id}" placeholder="Jouw antwoord, als je het weet">${esc(S.answers['row:' + q.row_id] || '')}</textarea></div>`).join('')}
+      ${!hq.length && !d.questions.length ? '<div class="q dim">Geen open punten.</div>' : ''}</div>
+    ${mine.length ? `<div class="group"><h3>Jouw wijzigingen</h3>${mine.map(m => `<div class="mine-item"><span class="x">${m.html}</span><button class="link" data-undo="${m.key}">undo</button></div>`).join('')}</div>` : ''}
+  </div>
+  <div class="foot">
+    <button class="primary big" id="deploy" ${n ? '' : 'disabled'}>${n ? `Deploy ${plural(n, 'change', 'changes')}` : 'Nothing to deploy yet'}</button>
+    ${P ? '<button class="link small" id="sendBack">Liever terugsturen naar Hermes</button>' : ''}
+  </div>`;
+  side.querySelectorAll('[data-keep]').forEach(c => c.onchange = () => { const i = +c.dataset.keep; c.checked ? S.include.add(i) : S.include.delete(i); renderSheet(); renderSide(); });
+  side.querySelectorAll('[data-src]').forEach(b => b.onclick = () => showSource(b.dataset.src, b.dataset.quote));
+  side.querySelectorAll('[data-row-link]').forEach(el => el.addEventListener('click', ev => {
+    if (ev.target.closest('input,button,label')) return;
+    const tr = document.querySelector(`#docwrap tr[data-rid="${el.dataset.rowLink}"]`); if (!tr) return;
+    tr.scrollIntoView({block:'center', behavior:'smooth'}); tr.classList.remove('flash'); void tr.offsetWidth; tr.classList.add('flash');
+  }));
+  side.querySelectorAll('[data-answer]').forEach(t => {
+    t.oninput = () => { const k = t.dataset.answer; t.value.trim() ? S.answers[k] = t.value : delete S.answers[k]; updateDeployButton(); };
+    t.onchange = () => renderSheet();
+  });
+  side.querySelectorAll('[data-undo]').forEach(b => b.onclick = () => { undo(b.dataset.undo); renderSheet(); renderSide(); });
+  $('#deploy').onclick = openDeploy;
+  if ($('#sendBack')) $('#sendBack').onclick = openSendBack;
+}
+
+function updateDeployButton(){ const n = pendingCount(), b = $('#deploy'); if (!b) return; b.disabled = !n; b.textContent = n ? `Deploy ${plural(n, 'change', 'changes')}` : 'Nothing to deploy yet'; }
+
+function myList(){
+  const out = [];
+  for (const [rid, vals] of Object.entries(S.cells)) { const r = findRow(rid); out.push({key:'cell:' + rid, html:`Changed <b>${esc(first(r.values))}</b> in ${esc(r.section || '')}: ${Object.values(vals).map(v => `<ins>${esc(v)}</ins>`).join(', ')}`}); }
+  S.adds.forEach((a, i) => out.push({key:'add:' + i, html:`New row in ${esc(a.section)}: <ins>${esc(a.values.filter(Boolean).join(' · ') || '(empty)')}</ins>`}));
+  for (const rid of Object.keys(S.removes)) { const r = findRow(rid); out.push({key:'remove:' + rid, html:`Removed <del>${esc(r.values.filter(Boolean).join(' · '))}</del>`}); }
+  for (const [i, v] of Object.entries(S.propEdits)) out.push({key:'prop:' + i, html:`Adjusted Hermes’ change: <ins>${esc(v.filter(Boolean).join(' · '))}</ins>`});
+  return out;
+}
+function undo(key){
+  const [kind, id] = [key.slice(0, key.indexOf(':')), key.slice(key.indexOf(':') + 1)];
+  if (kind === 'cell') delete S.cells[id]; if (kind === 'add') S.adds.splice(+id, 1);
+  if (kind === 'remove') delete S.removes[id]; if (kind === 'prop') delete S.propEdits[id];
+}
+
+// ================================================================ deploy
+function buildRequest(){
+  const d = S.doc, P = d.proposal, include = [], own = [], answers = [], rows = {};
+  const touch = (rid, col, text, reason) => { const r = findRow(rid); const x = rows[rid] ||= {values:{}, expect: S.expect[rid] ?? first(r.values), reasons:[]};
+    if (x.values[col] === undefined) x.values[col] = text; if (reason && !x.reasons.includes(reason)) x.reasons.push(reason); };
+  for (const q of d.questions) { const a = S.answers['row:' + q.row_id]; if (a?.trim()) touch(q.row_id, q.answer_col, 'Antwoord: ' + a.trim(), 'Antwoord van Larissa op een open punt'); }
+  for (const [rid, vals] of Object.entries(S.cells)) for (const [c, t] of Object.entries(vals)) touch(rid, c, t, 'Edited by Larissa');
+  for (const e of P?.edits || []) {
+    if (!S.include.has(e.index) || S.answers['p:' + e.index]?.trim()) continue;
+    const edited = S.propEdits[e.index];
+    if (e.op === 'add_row' && edited) own.push({type:'add', after_row_id: e.anchor_row_id, section: e.section, values: edited, category: e.category, reason: `${e.reason} (adjusted by Larissa)`});
+    else if (e.op === 'update_row' && (edited || rows[e.row_id])) (edited || e.after).forEach((v, c) => { if (v !== (e.before || [])[c]) touch(e.row_id, c, v, e.reason + (edited ? ' (adjusted by Larissa)' : '')); });
+    else include.push(e.index);
+  }
+  for (const [rid, x] of Object.entries(rows)) if (!(rid in S.removes)) own.push({type:'cell', row_id: rid, values: x.values, expect: x.expect, reason: x.reasons.join('; ')});
+  S.adds.forEach(a => { if (a.values.some(v => v.trim())) own.push({type:'add', after_row_id: a.after_row_id, section: a.section, values: a.values, category: a.category}); });
+  for (const [rid, exp] of Object.entries(S.removes)) own.push({type:'remove', row_id: rid, expect: exp});
+  for (const q of d.questions) { const a = S.answers['row:' + q.row_id]; if (a?.trim()) answers.push({question: q.values.filter(Boolean).join(' · '), answer: a.trim()}); }
+  for (const e of hermesQuestions()) { const a = S.answers['p:' + e.index]; if (a?.trim()) answers.push({proposal_index: e.index, question: e.after.filter(Boolean).join(' · '), answer: a.trim()}); }
+  return {doc_id: d.doc_id, expected_revision: d.revision_id, proposal_id: P?.id || null, include, own, answers};
+}
+function pendingCount(){ if (!S.doc) return 0; const r = buildRequest(); return r.include.length + r.own.length + r.answers.filter(a => a.proposal_index !== undefined).length; }
+
+function dialog(head, body, foot){ $('#dlgHead').innerHTML = head; $('#dlgBody').innerHTML = body; $('#dlgFoot').innerHTML = foot; if (!$('#dlg').open) $('#dlg').showModal(); }
+$('#dlg').addEventListener('click', e => { if (e.target.matches('[data-close]')) $('#dlg').close(); });
+
+function lineFor(item, text){
+  const bad = (item?.violations || []).filter(v => v.severity === 'block'), warn = (item?.violations || []).filter(v => v.severity !== 'block'), uns = item?.unsupported || [];
+  const ok = !bad.length && !uns.length;
+  return `<div class="line"><span class="ic ${ok ? 'ok' : 'bad'}">${ok ? '✓' : '✕'}</span><div>${text}
+    ${[...bad.map(v => v.message), ...uns].map(m => `<div class="msg err">${esc(m)}</div>`).join('')}${warn.map(v => `<div class="msg">${esc(v.message)}</div>`).join('')}</div></div>`;
+}
+
+async function openDeploy(){
+  const req = buildRequest();
+  dialog('Deploy to the draaiboek', '<div class="empty"><span class="spin"></span>Elke wijziging wordt gecontroleerd tegen de regels en de bronnen…</div>', '<button data-close>Annuleren</button>');
+  let check;
+  try { check = await api('/api/check', req); } catch(e) { return dialog('Deploy to the draaiboek', `<div class="msg err">${esc(e.message)}</div>`, '<button data-close>Sluiten</button>'); }
+  const P = S.doc.proposal; let k = 0;
+  const lines = [
+    ...req.include.map(i => { const e = P.edits[i]; return lineFor(check.items[k++], `<b>${KIND[e.op][0]}</b> <span class="dim">${esc(e.section || '')}</span><br>${changeText(e)}`); }),
+    ...req.own.map(o => { const r = o.row_id ? findRow(o.row_id) : null;
+      const text = o.type === 'cell' ? `<b>Wijzigen</b> <span class="dim">${esc(r?.section || '')}</span><br>${Object.values(o.values).map(v => `<ins>${esc(v)}</ins>`).join(', ')}`
+        : o.type === 'add' ? `<b>Nieuwe regel</b> <span class="dim">${esc(o.section)}</span><br><ins>${esc(o.values.filter(Boolean).join(' · '))}</ins>`
+        : `<b>Regel verwijderen</b><br><del>${esc(r?.values.filter(Boolean).join(' · '))}</del>`;
+      return lineFor(check.items[k++], text); }),
+  ].join('');
+  const answersLine = req.answers.length ? `<div class="line"><span class="ic ok">✓</span><div>${plural(req.answers.length, 'answer goes', 'answers go')} to Hermes</div></div>` : '';
+  const problems = [...(check.errors || [])];
+  if (!check.revision_ok) problems.unshift('Someone changed this draaiboek in Google Docs after you opened it. Reload it — your changes are kept and checked again.');
+  dialog('Deploy to the draaiboek',
+    `${problems.map(p => `<div class="msg err">${esc(p)}</div>`).join('')}${lines}${answersLine}
+     ${check.ok ? '<p class="small dim" style="margin-bottom:0">Only these changes are written. Nothing else in the draaiboek is touched.</p>' : '<p class="small" style="color:var(--err)">Pas aan of laat weg wat met ✕ is gemarkeerd, en voer daarna door.</p>'}`,
+    `${!check.revision_ok ? '<button id="reloadDoc">Draaiboek opnieuw laden</button>' : ''}<button data-close>Annuleren</button><button class="primary" id="confirmDeploy" ${check.ok ? '' : 'disabled'}>Doorvoeren</button>`);
+  if ($('#reloadDoc')) $('#reloadDoc').onclick = async () => { $('#dlg').close(); await loadDoc(S.doc.doc_id, true); };
+  $('#confirmDeploy').onclick = async () => {
+    $('#confirmDeploy').disabled = true; $('#confirmDeploy').innerHTML = '<span class="spin"></span>Deploying…';
+    try {
+      const res = await api('/api/deploy', req);
+      const url = S.doc.url;
+      await loadDoc(S.doc.doc_id);
+      dialog('Done ✓', `<div class="msg ok">${plural(res.applied, 'change is', 'changes are')} in the draaiboek${res.answers.length ? `, and ${plural(res.answers.length, 'answer', 'answers')} went to Hermes` : ''}.</div>
+        ${res.reminders.length ? `<p><b>Herinneringen</b></p><ul>${res.reminders.map(r => `<li>${esc(r)}</li>`).join('')}</ul>` : ''}
+        ${res.quote_gaps.length ? `<p><b>Wel in het draaiboek, niet in de offerte</b> — check if these belong in Xero:</p><ul>${res.quote_gaps.map(g => `<li>${esc(g.row)}</li>`).join('')}</ul>` : ''}`,
+        `${url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer"><button>Openen in Google Docs ↗</button></a>` : ''}<button class="primary" data-close>Sluiten</button>`);
+    } catch(e) {
+      dialog('Not deployed', `<div class="msg err">${esc(e.message)}</div><p class="small dim">Er is niets weggeschreven.</p>`,
+        `${e.data?.kind === 'conflict' ? '<button id="reloadDoc2">Draaiboek opnieuw laden</button>' : ''}<button data-close>Sluiten</button>`);
+      if ($('#reloadDoc2')) $('#reloadDoc2').onclick = async () => { $('#dlg').close(); await loadDoc(S.doc.doc_id, true); };
+    }
+  };
+}
+
+function openSendBack(){
+  dialog('Send back to Hermes', `<p style="margin-top:0">Nothing is written. Tell Hermes what should be different — it makes a new proposal.</p>
+    <textarea id="note" rows="5" placeholder="bijv. De pauze is om 21:15, niet 21:00. Laat de garderobe weg."></textarea>`,
+    '<button data-close>Annuleren</button><button class="primary" id="sendGo">Terug naar Hermes</button>');
+  $('#sendGo').onclick = async () => {
+    try { await api('/api/proposal/reject', {proposal_id: S.doc.proposal.id, comment: $('#note').value});
+      resetWork(); await loadDoc(S.doc.doc_id); dialog('Sent back', '<div class="msg ok">Hermes heeft je bericht.</div>', '<button class="primary" data-close>Sluiten</button>'); }
+    catch(e) { dialog('Not sent', `<div class="msg err">${esc(e.message)}</div>`, '<button data-close>Sluiten</button>'); }
+  };
+}
+
+// ================================================================ rules
+function md(src){
+  const inline = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/`([^`]+)`/g, '<code>$1</code>');
+  const L = src.split('\n'), out = []; let i = 0;
+  while (i < L.length) {
+    const l = L[i];
+    if (/^\s*\|/.test(l)) { const rows = []; while (i < L.length && /^\s*\|/.test(L[i])) { if (!/^\s*\|[\s:|-]+\|\s*$/.test(L[i])) rows.push(L[i]); i++; }
+      out.push('<table>' + rows.map((r, n) => '<tr>' + r.trim().replace(/^\||\|$/g, '').split('|').map(c => n ? `<td>${inline(c.trim())}</td>` : `<th>${inline(c.trim())}</th>`).join('') + '</tr>').join('') + '</table>'); continue; }
+    if (/^>\s?/.test(l)) { const q = []; while (i < L.length && /^>\s?/.test(L[i])) q.push(L[i++].replace(/^>\s?/, '')); out.push(`<blockquote>${q.map(inline).join('<br>')}</blockquote>`); continue; }
+    if (/^\s*[-*]\s+/.test(l)) { const it = []; while (i < L.length && /^\s*[-*]\s+/.test(L[i])) it.push(L[i++].replace(/^\s*[-*]\s+/, '')); out.push(`<ul>${it.map(x => `<li>${inline(x)}</li>`).join('')}</ul>`); continue; }
+    const h = /^(#{1,3})\s+(.*)/.exec(l);
+    if (h) out.push(`<h${h[1].length}>${inline(h[2])}</h${h[1].length}>`); else if (/^---+\s*$/.test(l)) out.push('<hr>'); else if (l.trim()) out.push(`<p>${inline(l)}</p>`);
+    i++;
+  }
+  return out.join('');
+}
+
+async function viewRules(){
+  document.title = 'Rules · Draaiboek';
+  $('#app').innerHTML = '<div class="empty"><span class="spin"></span>Regels laden…</div>';
+  let r; try { r = await api('/api/rules'); } catch(e) { $('#app').innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+  S.rulesText = r.markdown;
+  const render = () => {
+    $('#app').innerHTML = `<div class="rules">
+      <div class="topbar"><button id="back">← Evenementen</button><h1>Regels voor elk draaiboek</h1><span class="spacer"></span>
+        ${S.editingRules ? '<button id="cancel">Annuleren</button><button class="primary" id="save">Regels opslaan</button>' : '<button class="primary" id="edit">Regels aanpassen</button>'}</div>
+      <div id="saved"></div>
+      <div class="card">${S.editingRules
+        ? `<div class="editor"><textarea id="rulesText" spellcheck="false">${esc(S.rulesText)}</textarea></div>`
+        : `<div class="md">${md(S.rulesText)}</div>`}</div>
+      <div class="card" style="margin-top:16px"><div class="card-title">Wordt altijd automatisch gecontroleerd</div><div style="padding:6px 22px 14px"><ul>
+        ${r.enforced.locked_sections.map(s => `<li><b>${esc(s)}</b> is your section. Hermes never writes there.</li>`).join('')}
+        ${r.enforced.forbidden.map(f => `<li>${esc(f.message)}</li>`).join('')}
+        ${r.enforced.lexicon.map(x => `<li>Schrijf <b>${esc(x.right)}</b>. ${esc(x.message)}</li>`).join('')}
+        <li>Rows you delete stay deleted — Hermes can never add them back.</li></ul>
+        <p class="small dim">These checks block a change before it reaches the draaiboek. Ask Romir to change one of these.</p></div></div>
+    </div>`;
+    $('#back').onclick = () => go('/');
+    if ($('#edit')) $('#edit').onclick = () => { S.editingRules = true; render(); $('#rulesText').focus(); };
+    if ($('#cancel')) $('#cancel').onclick = () => { S.editingRules = false; render(); };
+    if ($('#save')) $('#save').onclick = async () => {
+      const text = $('#rulesText').value;
+      try { await api('/api/rules', {markdown: text}); S.rulesText = text; S.editingRules = false; render();
+        $('#saved').innerHTML = '<div class="msg ok">Saved. Hermes uses the new rules from its next task. The previous version is kept.</div>'; }
+      catch(e) { $('#saved').innerHTML = `<div class="msg err">${esc(e.message)}</div>`; }
+    };
+  };
+  render();
+}
+
+// ================================================================ start
+(async function start(){
+  connections();
+  const p = new URLSearchParams(location.search).get('proposal');
+  if (p) {
+    try { const r = await api('/api/proposal?id=' + encodeURIComponent(p)); if (r.error) throw new Error(r.error);
+      history.replaceState(null, '', '/#/doc/' + encodeURIComponent(r.doc_id)); lastHash = location.hash; }
+    catch(e) { history.replaceState(null, '', '/'); }
+  }
+  route();
+})();
+</script>

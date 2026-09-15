@@ -1,0 +1,16 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "draaiboek-demo",
+      "runtimeExecutable": "/usr/bin/env",
+      "runtimeArgs": [
+        "DRAAIBOEK_HOME=/private/tmp/claude-501/-Users-hornet-Projects-ConcertLab-draaiboek/5953eeaf-8bdf-483a-ad77-2a0bf306ff66/scratchpad/home",
+        "DRAAIBOEK_PUBLIC_URL=http://127.0.0.1:8767",
+        "/Users/hornet/Projects/ConcertLab/draaiboek/.venv/bin/draaiboek",
+        "ui", "--port", "8767", "--no-open"
+      ],
+      "port": 8767
+    }
+  ]
+}

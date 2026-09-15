@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Draaiboek — sign in</title>
+<style>
+:root{--bg:#f6f7f9;--panel:#fff;--ink:#15181d;--dim:#6b7280;--line:#e2e5ea;--accent:#2d3c4f;--err:#a32020}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1114;--panel:#16191e;--ink:#e6e8ec;--dim:#98a0ad;--line:#272c34;--accent:#9fb4d0;--err:#f87171}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  min-height:100vh;display:grid;place-items:center;padding:16px}
+form{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:26px;width:100%;max-width:380px}
+h1{font-size:16px;margin:0 0 4px}
+p{color:var(--dim);margin:0 0 18px}
+input{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit}
+button{margin-top:12px;width:100%;padding:10px;border:0;border-radius:8px;background:var(--accent);color:#fff;font:inherit;font-weight:600;cursor:pointer}
+@media (prefers-color-scheme:dark){button{color:#0f1720}}
+.err{color:var(--err);margin-top:10px;min-height:1em}
+</style>
+<form method="post" action="/login">
+  <h1>Draaiboek</h1>
+  <p>Enter the access key Romir gave you. You stay signed in on this device for 30 days.</p>
+  <input type="password" name="key" autocomplete="current-password" placeholder="Access key" autofocus required>
+  <input type="hidden" name="next" value="{{next}}">
+  <button type="submit">Sign in</button>
+  <div class="err">{{error}}</div>
+</form>
