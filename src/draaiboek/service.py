@@ -506,10 +506,56 @@ class Draaiboek:
             self.backend(doc_id).batch_update(doc_id, reqs)
         return changed
 
+    def venue(self) -> dict[str, Any]:
+        """The building: rooms, capacities and the thresholds that hang off
+        them. Standing facts, so no draaiboek rediscovers them and no two
+        disagree about how many fit in the grote zaal."""
+        import yaml
+        p = self.cfg.venue_path
+        if not p.exists():
+            return {}
+        try:
+            return yaml.safe_load(p.read_text()) or {}
+        except Exception:  # noqa: BLE001
+            return {}
+
+    def _capacity_notes(self, view: DocView) -> list[str]:
+        """Check the guest numbers written in the document against the room."""
+        import re
+
+        v = self.venue()
+        if not v:
+            return []
+        text = " ".join(r.joined() for r in view.data_rows()) + " " + (view.title or "")
+        counts = [int(n) for n in re.findall(r"(?<![\d:.,])(\d{2,4})\s*(?:gasten|pax|personen)", text, re.I)]
+        counts += [int(n) for n in re.findall(r"(?:gasten|pax|personen)\D{0,6}(\d{2,4})", text, re.I)]
+        if not counts:
+            return []
+        top = max(counts)
+        out: list[str] = []
+
+        hall = next((r for r in v.get("rooms", []) if r.get("max_persons")), None)
+        if hall and top > hall["max_persons"]:
+            out.append(
+                f"{top} gasten is meer dan {hall['name']} aankan "
+                f"({hall['max_persons']} volgens de plattegrond). Controleer de verdeling "
+                f"over de zalen."
+            )
+        for t in v.get("thresholds", []):
+            over = t.get("over")
+            if over and top > over:
+                need = t.get("setup")
+                low = text.lower()
+                already = any(w in low for w in ("triade", "koffiepunt")) if not need else "triade" in low
+                if not already:
+                    out.append(f"Meer dan {over} gasten ({top}): {t['action']}.")
+        return out
+
     def reminders_for(self, view: DocView) -> list[str]:
         """Things Larissa asked to be reminded about, checked against the doc."""
         out: list[str] = []
         text = " ".join(r.joined().lower() for r in view.data_rows())
+        out.extend(self._capacity_notes(view))
         lev = view.section_by_name("Leveringen")
         lev_rows = [view.row(r) for r in lev.row_ids] if lev else []
         lev_text = " ".join((r.joined().lower() if r else "") for r in lev_rows)

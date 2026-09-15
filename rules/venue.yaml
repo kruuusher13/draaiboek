@@ -1,0 +1,72 @@
+# Leeuwenbergh Utrecht — the building itself.
+#
+# Standing facts, so no draaiboek has to rediscover them and no two disagree.
+# Every number here is sourced. Add to it the same way: with where it came from.
+#
+# Primary source: the floor plan Leeuwenbergh sent the wedding couple,
+# "Leeuwenbergh 26 september 2026.pdf" (drawing CCLAB18005IN.101, 1:50),
+# confirmed by Larissa on 1 Sep 2026.
+
+address: Servaasbolwerk 1a, Utrecht
+
+rooms:
+  - name: Grote zaal
+    code: B.01
+    area_m2: 446.8
+    max_persons: 225            # plattegrond IN.101
+    seating:
+      fauteuils: 168
+      kleine_fauteuils: 24
+      total: 192                # Larissa, 1 Sep 2026
+    notes:
+      - Podium met katheder; gordijnen voor verduistering
+      - Balkon grote zaal — rechte tafel, circa 20 gasten aan tafel
+      - In theateropstelling is 171 gasten gebruikt als werkbaar aantal (13 sep 2026)
+
+  - name: Foyer
+    role: ontvangst, pauze, borrel
+    notes:
+      - Verplaatsbare bar, in losse delen
+      - Foyer podium — gebruikt voor speeches en LED scherm
+      - Balkon Foyer — 3 ronde tafels, circa 30 gasten aan tafel
+      - Statafels met rokken; kleur per event afspreken
+
+  - name: Córdoba Zaal
+    role: grootste subruimte
+    max_persons: 20             # Larissa, 13 sep 2026
+    notes:
+      - Bij gebruik van de tuindeur: crew waarschuwen (zij lopen naar buiten)
+
+  - name: Kleine vergaderruimte
+    role: kleinste subruimte
+    max_persons: 9              # Larissa, 13 sep 2026
+    notes:
+      - In gebruik? Dan zijn de toiletten in het souterrain niet beschikbaar —
+        team hierover informeren.
+
+  - name: Tuin
+    notes:
+      - Toegestaan tot 20:00, weersafhankelijk (13 sep 2026)
+
+  - name: Souterrain
+    notes:
+      - Bruidskamer / artiestenkamer met basisvoorzieningen
+      - Toiletten; trap en mindervalidenlift vanaf de begane grond
+
+  - name: Keuken
+    code: B.04
+    notes:
+      - Beschikbaar voor voorbereiding door externe cateraar
+
+# A full house is 200: 171 in the grote zaal, 20 in Córdoba, 9 in the small
+# meeting room (Larissa, 13 Sep 2026).
+house_full: 200
+
+thresholds:
+  - over: 160
+    setup: plenaire theateropstelling
+    action: 40 extra zwarte stoelen bestellen bij Triade
+    source: Larissa, 2 sep 2026 ("LOCK THIS IN")
+  - over: 175
+    action: extra self-service koffiepunt inrichten
+    source: Larissa, 2 sep 2026

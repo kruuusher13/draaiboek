@@ -55,6 +55,10 @@ class Config:
         return self.rules_dir / "house_rules.md"
 
     @property
+    def venue_path(self) -> Path:
+        return self.rules_dir / "venue.yaml"
+
+    @property
     def guards_path(self) -> Path:
         return self.rules_dir / "guards.yaml"
 

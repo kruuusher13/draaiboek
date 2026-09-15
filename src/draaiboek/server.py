@@ -292,6 +292,16 @@ def read_attachment(ref: str, index: int = 0) -> dict[str, Any]:
 
 
 @mcp.tool()
+def venue() -> dict[str, Any]:
+    """Leeuwenbergh itself: rooms, capacities, and the rules that follow from
+    them. Read it before writing an Inrichting chapter or a guest count -- the
+    grote zaal holds 225, Córdoba 20, the small meeting room 9, and a full
+    house is 200 across the three.
+    """
+    return {"ok": True, **_svc.venue()}
+
+
+@mcp.tool()
 def source_status() -> dict[str, Any]:
     """Which systems are connected. A system that is not configured is skipped
     silently by gather(), so check here when evidence looks thin."""
