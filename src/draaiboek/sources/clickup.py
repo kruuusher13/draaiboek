@@ -29,6 +29,8 @@ MONEY_FIELD = re.compile(
     r"payment|betaling|rabo|bank|incasso|xero|"
     r"revenue|marge|deposit|value"
 )
+MISSIVE_LINK = re.compile(
+    r"mail\.missiveapp\.com/#[^/]*/conversations/([0-9a-f-]{16,})")
 DOC_LINK = re.compile(r"https://docs\.google\.com/document/d/([A-Za-z0-9_-]{20,})")
 QUOTE_REF = re.compile(r"\bQU-\d{3,}(?:\.\d+)?\b")
 CANCELLED = re.compile(r"(?i)cancel|lost|geannuleerd|afgelast")
@@ -152,12 +154,17 @@ class ClickUp:
         ] if x)
 
         docs = DOC_LINK.findall(desc)
+        missive = sorted(set(MISSIVE_LINK.findall(desc)))
         quotes = QUOTE_REF.findall(desc)
         meta = {
             "status": status,
             "list": (task.get("list") or {}).get("name", ""),
             "draaiboek_doc_id": docs[0] if docs else None,
             "quote_refs": sorted(set(quotes)),
+            # Larissa pastes the Missive thread link into the task. That is an
+            # exact pointer to the conversation, which matters because Missive
+            # cannot be searched at all.
+            "missive_ids": missive,
             "due_date": task.get("due_date"),
         }
         if "_comments" in task:

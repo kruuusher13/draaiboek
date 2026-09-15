@@ -65,6 +65,13 @@ class Sources:
                 elif evs:
                     results.extend(evs)
 
+        # Missive cannot be searched, so reach its threads through the links
+        # ClickUp holds. Done after the parallel pass, which is when the
+        # ClickUp evidence exists to read them from.
+        for ev in self.follow_missive(results):
+            if ev.ref not in {e.ref for e in results}:
+                results.append(ev)
+
         # Gmail first: her instruction is that direct Gmail search beats Missive.
         order = {"email": 0, "clickup": 1, "xero": 2, "missive": 3}
         results.sort(key=lambda e: order.get(e.kind, 9))
@@ -74,6 +81,33 @@ class Sources:
         prefix = ref.split(":", 1)[0] if ":" in ref else ""
         return {"gmail": self.gmail, "clickup": self.clickup,
                 "xero": self.xero, "missive": self.missive}.get(prefix)
+
+    def follow_missive(self, found: list) -> list:
+        """Missive has no search endpoint -- `search` and `q` are accepted and
+        ignored. Guessing from the most recent conversations finds an event
+        from three weeks ago only by luck.
+
+        ClickUp tasks carry the thread link, so follow that instead. It is
+        exact, and it is the only way the internal comments -- the notes the
+        team writes to each other, which never appear in the mailbox -- reach
+        the agent at all.
+        """
+        if self.missive is None or not self.missive.available():
+            return []
+        ids: list[str] = []
+        for ev in found:
+            for cid in (ev.meta.get("missive_ids") or []):
+                if cid not in ids:
+                    ids.append(cid)
+        out = []
+        for cid in ids[:6]:
+            try:
+                ev = self.missive.fetch(f"missive:{cid}")
+            except Exception:  # noqa: BLE001
+                continue
+            if ev is not None:
+                out.append(ev)
+        return out
 
     def fetch(self, ref: str) -> Evidence | None:
         client = self._client_for(ref)
