@@ -872,17 +872,17 @@ class Draaiboek:
         cuts: list[dict] = []
 
         if tables:
-            tail_from = tables[-1]["endIndex"]
-            tail_to = body[-1]["endIndex"] - 1
+            tail_from = tables[-1].get("endIndex", 0)
+            tail_to = body[-1].get("endIndex", 0) - 1
             if tail_to > tail_from:
                 cuts.append({"deleteContentRange": {"range": {
                     "startIndex": tail_from, "endIndex": tail_to}}})
 
         # Title and subtitle become placeholders a human can see and edit.
-        first_table = tables[0]["startIndex"] if tables else None
+        first_table = tables[0].get("startIndex") if tables else None
         headings = []
         for el in body:
-            if first_table is not None and el["startIndex"] >= first_table:
+            if first_table is not None and el.get("startIndex", 0) >= first_table:
                 break
             para = el.get("paragraph")
             if not para:
