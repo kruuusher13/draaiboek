@@ -185,6 +185,27 @@ class Draaiboek:
         else:
             view2 = view
 
+        # 4b. A row inserted below a section band inherits the band's merged
+        #     cell, so everything typed into it lands in column 0 and the row
+        #     then reads as another chapter heading. Chapters with no column
+        #     header leave no other anchor, so split the merge back apart.
+        if new_rows:
+            unmerge = []
+            for row_id in new_rows.values():
+                row = view2.row(row_id)
+                if row is None or not row.cells:
+                    continue
+                table = view2.tables[row.table]
+                if max((c.column_span for c in row.cells), default=1) > 1:
+                    unmerge.append({"unmergeTableCells": {"tableRange": {
+                        "tableCellLocation": {
+                            "tableStartLocation": {"index": table.start_index},
+                            "rowIndex": row.index, "columnIndex": 0},
+                        "rowSpan": 1, "columnSpan": table.columns}}})
+            if unmerge:
+                be.batch_update(req.doc_id, unmerge)
+                view2 = parse_document(be.get_document(req.doc_id))
+
         # 5. Phase B -- text and shading. One atomic batch, planned on the
         #    re-read document. Row ids are positions: a row below an insert or a
         #    delete has a different id now, so follow each updated row there.
