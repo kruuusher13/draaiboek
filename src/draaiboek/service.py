@@ -816,13 +816,16 @@ class Draaiboek:
         view = parse_document(self.backend(doc_id).get_document(doc_id))
 
         # delete every data row, bottom-up so indices stay valid
-        reqs = []
-        for t in view.tables:
-            for r in sorted((x for x in t.rows if x.kind == "data"),
-                            key=lambda x: x.start_index, reverse=True):
-                reqs.append({"deleteTableRow": {"tableCellLocation": {
+        # Bottom of the document upwards, across tables as well as within
+        # them. Emptying an earlier table moves every later table, so deleting
+        # top-down invalidates the table positions captured from this read.
+        targets = [(t, r) for t in view.tables for r in t.rows if r.kind == "data"]
+        targets.sort(key=lambda tr: (tr[0].start_index, tr[1].start_index),
+                     reverse=True)
+        reqs = [{"deleteTableRow": {"tableCellLocation": {
                     "tableStartLocation": {"index": t.start_index},
-                    "rowIndex": r.index, "columnIndex": 0}}})
+                    "rowIndex": r.index, "columnIndex": 0}}}
+                for t, r in targets]
         removed = len(reqs)
         if reqs:
             be.batch_update(doc_id, reqs)
