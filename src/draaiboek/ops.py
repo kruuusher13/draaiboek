@@ -51,6 +51,7 @@ class SourceKind(str, Enum):
     EMAIL = "email"          # a Gmail thread -- ref = message id or subject+date
     CLICKUP = "clickup"      # task field   -- ref = task id + field
     XERO = "xero"            # quote line   -- ref = quote number (verify vs task!)
+    MISSIVE = "missive"      # a Missive conversation, including internal comments
     LARISSA = "larissa"      # she said it directly -- ref = date/message
     HOUSE_RULE = "house_rule"  # a standing rule in rules/house_rules.md
     DOC = "doc"              # already in the document; a correction of it
