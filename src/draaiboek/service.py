@@ -861,6 +861,51 @@ class Draaiboek:
         if reqs:
             be.batch_update(doc_id, reqs)
 
+        # Emptying the tables is not enough. A draaiboek keeps its title, its
+        # subtitle and a long tail of loose paragraphs -- open points, the
+        # "TO DO - PRODUCTIE" list -- outside any table. Left in place they
+        # travel into every document made from this template: the Fever
+        # draaiboek arrived carrying the wedding's suppliers and to-do list.
+        doc = be.get_document(doc_id)
+        body = doc["body"]["content"]
+        tables = [el for el in body if "table" in el]
+        cuts: list[dict] = []
+
+        if tables:
+            tail_from = tables[-1]["endIndex"]
+            tail_to = body[-1]["endIndex"] - 1
+            if tail_to > tail_from:
+                cuts.append({"deleteContentRange": {"range": {
+                    "startIndex": tail_from, "endIndex": tail_to}}})
+
+        # Title and subtitle become placeholders a human can see and edit.
+        first_table = tables[0]["startIndex"] if tables else None
+        headings = []
+        for el in body:
+            if first_table is not None and el["startIndex"] >= first_table:
+                break
+            para = el.get("paragraph")
+            if not para:
+                continue
+            text = "".join(e.get("textRun", {}).get("content", "")
+                           for e in para.get("elements", [])).strip()
+            if text and "Techniek & Media" not in text and text != "Tijdschema":
+                headings.append((el, text))
+        for el, text in headings[:2][::-1]:
+            start = el["startIndex"]
+            cuts.append({"deleteContentRange": {"range": {
+                "startIndex": start, "endIndex": start + len(text)}}})
+            cuts.append({"insertText": {"location": {"index": start},
+                                        "text": "{{TITEL}}" if el is headings[0][0]
+                                        else "{{ONDERTITEL}}"}})
+
+        if cuts:
+            cuts.sort(key=lambda r: -(r.get("deleteContentRange", r.get("insertText", {}))
+                                      .get("range", {}).get("startIndex",
+                                      r.get("insertText", {}).get("location", {})
+                                      .get("index", 0))))
+            be.batch_update(doc_id, cuts)
+
         final, _ = self.read(doc_id)
         self.ledger.append(event="template_created", doc_id=doc_id,
                            source=source_doc_id, rows_emptied=removed)
@@ -871,7 +916,7 @@ class Draaiboek:
                         "document by eye: logo, column widths, legend, band colours."}
 
     # -- create ------------------------------------------------------------
-    def create(self, title: str, *, template_id: str | None = None,
+    def create(self, title: str, *, subtitle: str = "", template_id: str | None = None,
                folder_id: str | None = None) -> dict[str, Any]:
         """A new draaiboek is a copy of the template document.
 
@@ -885,7 +930,19 @@ class Draaiboek:
                 "No template configured. Set DRAAIBOEK_TEMPLATE_DOC_ID to the id of the "
                 "master draaiboek document, or pass template_id."
             )
-        doc_id = self.backend(tpl).copy_document(tpl, title, folder_id or self.cfg.drive_folder_id)
+        be = self.backend(tpl)
+        doc_id = be.copy_document(tpl, title, folder_id or self.cfg.drive_folder_id)
+        # The template carries placeholders where its own event's name used to
+        # be, so a new draaiboek is named for its own event, not the one the
+        # template was cut from.
+        fills = [{"replaceAllText": {"containsText": {"text": "{{TITEL}}", "matchCase": True},
+                                     "replaceText": title}},
+                 {"replaceAllText": {"containsText": {"text": "{{ONDERTITEL}}", "matchCase": True},
+                                     "replaceText": subtitle or ""}}]
+        try:
+            be.batch_update(doc_id, fills)
+        except Exception:  # noqa: BLE001 -- a template without placeholders still works
+            pass
         view, _ = self.read(doc_id)
         self.ledger.append(event="created", doc_id=doc_id, title=title, template=tpl,
                            revision=view.revision_id)

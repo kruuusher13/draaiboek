@@ -159,6 +159,8 @@ class LocalDocs:
                 doc["tables"][t].setdefault("bg", {})[str(tr["rowIndex"])] = [
                     rgb.get("red", 1.0), rgb.get("green", 1.0), rgb.get("blue", 1.0)
                 ]
+            elif kind == "updateTextStyle":
+                pass  # character styling is not modelled here
             elif kind == "replaceAllText":
                 find = body["containsText"]["text"]
                 rep = body["replaceText"]

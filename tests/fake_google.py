@@ -82,6 +82,8 @@ class FakeGoogle:
                 t = tstarts[tr["tableStartLocation"]["index"]]
                 self.styles[(t, tr["rowIndex"])] = body["tableCellStyle"]
 
+            elif kind == "updateTextStyle":
+                pass  # character styling is not modelled here
             elif kind == "replaceAllText":
                 find = body["containsText"]["text"]
                 rep = body["replaceText"]

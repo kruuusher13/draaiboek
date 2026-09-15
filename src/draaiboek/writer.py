@@ -174,6 +174,13 @@ def cell_text_requests(row: Row, table: Table, values: dict[int, str],
         text = values[col].rstrip("\n")
         if text:
             reqs.append({"insertText": {"location": {"index": start}, "text": text}})
+            # A row inserted below a section band inherits the band's white bold
+            # text, which is invisible on a pale row. Set it back to document ink.
+            reqs.append({"updateTextStyle": {
+                "range": {"startIndex": start, "endIndex": start + len(text)},
+                "textStyle": {"bold": False, "foregroundColor": {"color": {
+                    "rgbColor": {"red": 0.098, "green": 0.114, "blue": 0.133}}}},
+                "fields": "bold,foregroundColor"}})
 
     if category is not None:
         r, g, b = BG[category]
@@ -223,7 +230,16 @@ def plan_text(view: DocView, edits: list[Op], new_rows: dict[int, str]) -> list[
             if row is None:
                 raise WriteError(f"Created row {row_id} vanished before the text pass")
             table = view.tables[row.table]
-            vals = {c: v for c, v in enumerate(op.values) if c < len(row.cells)}
+            # Some chapters are two-column tables. Dropping the values that do
+            # not fit loses the content silently -- the entire wine order for
+            # 18 September vanished this way. Fold the remainder into the last
+            # cell instead.
+            n = len(row.cells)
+            vals = {c: v for c, v in enumerate(op.values[:n])}
+            if len(op.values) > n and n:
+                rest = [v for v in op.values[n:] if v.strip()]
+                if rest:
+                    vals[n - 1] = " · ".join(x for x in [vals.get(n - 1, "")] + rest if x)
             per_row.append((row.start_index, cell_text_requests(row, table, vals, op.category)))
 
         elif isinstance(op, UpdateRow):
