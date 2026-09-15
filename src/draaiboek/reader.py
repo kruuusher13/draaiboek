@@ -10,6 +10,7 @@ invisible to the map; here they are ordinary tables with ordinary row ids.
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from .model import Cell, DocView, Row, Section, Table, slugify
@@ -67,12 +68,45 @@ def _is_band(cells: list[Cell], columns: int) -> bool:
     return filled == [0] and len(cells) > 1
 
 
-def _is_header(cells: list[Cell]) -> bool:
+def _is_header(cells: list[Cell], below: list[Cell] | None = None) -> bool:
     vals = [c.text.strip().lower() for c in cells if c.text.strip()]
     if not vals:
         return False
     hits = sum(1 for v in vals if v in HEADER_WORDS)
-    return hits >= max(2, len(vals) - 1)
+    if hits >= max(2, len(vals) - 1):
+        return True
+    # Not every draaiboek labels its columns "Tijd / Activiteit". Some say
+    # "Gang / Omschrijving" or "Naam / Dieetwens". A shaded first row above
+    # unshaded rows, with no times or numbers in it, is a column header.
+    if below is None or not cells or not below:
+        return False
+    shaded = cells[0].background
+    if not shaded or shaded.lower() in ("#ffffff", "#000000"):
+        return False
+    if shaded == below[0].background:
+        return False
+    return not any(re.search(r"\d", v) for v in vals) and all(len(v) <= 40 for v in vals)
+
+
+# "2. TIJDSCHEMA", "INRICHTING & ZAALOPSTELLING" -- several draaiboeken put
+# their chapters in paragraphs and follow each with a table, instead of using
+# a full-width band row inside one big table.
+HEADING = re.compile(r"^(?:\d+[.)]\s*)?([A-Z][A-Z0-9 &/\u00c0-\u00de'’-]{3,48})\s*$")
+
+
+def _heading_text(el: dict) -> str | None:
+    para = el.get("paragraph")
+    if not para:
+        return None
+    text = "".join(pe.get("textRun", {}).get("content", "")
+                   for pe in para.get("elements", [])).strip()
+    if not text or len(text) > 60:
+        return None
+    style = (para.get("paragraphStyle") or {}).get("namedStyleType", "")
+    if style.startswith("HEADING"):
+        return re.sub(r"^\d+[.)]\s*", "", text)
+    m = HEADING.match(text)
+    return m.group(1).strip() if m else None
 
 
 def parse_document(doc: dict[str, Any]) -> DocView:
@@ -82,9 +116,13 @@ def parse_document(doc: dict[str, Any]) -> DocView:
 
     elements = doc.get("body", {}).get("content", [])
     t_idx = 0
+    pending_heading: str | None = None
     for el in elements:
         tbl = el.get("table")
         if not tbl:
+            found = _heading_text(el)
+            if found:
+                pending_heading = found
             continue
         columns = tbl.get("columns", 0) or max(
             (len(r.get("tableCells", [])) for r in tbl.get("tableRows", [])), default=0
@@ -108,7 +146,15 @@ def parse_document(doc: dict[str, Any]) -> DocView:
                 kind = "band"
                 current_section = cells[0].text.strip() if cells else None
                 seen_data_in_section = False
-            elif not seen_data_in_section and _is_header(cells):
+            elif not seen_data_in_section and _is_header(
+                    cells, next((
+                        [Cell(text=_text_of(tc.get("content")),
+                              start_index=tc.get("startIndex", 0),
+                              end_index=tc.get("endIndex", 0),
+                              column_span=(tc.get("tableCellStyle") or {}).get("columnSpan", 1),
+                              background=_rgb(tc.get("tableCellStyle")))
+                         for tc in nxt.get("tableCells", [])]
+                        for nxt in tbl.get("tableRows", [])[r_idx + 1:r_idx + 2]), None)):
                 kind = "header"
             else:
                 kind = "data"
@@ -132,6 +178,13 @@ def parse_document(doc: dict[str, Any]) -> DocView:
                     table=t_idx, band_row_id=row.row_id,
                 ))
 
+        if not any(r.kind == "band" for r in rows) and pending_heading:
+            sections.append(Section(name=pending_heading, slug=slugify(pending_heading),
+                                    table=t_idx, band_row_id=""))
+            for r in rows:
+                r.section = pending_heading
+            pending_heading = None
+
         headers = next((r.values for r in rows if r.kind == "header"), [])
         role = "unknown"
         low = {h.strip().lower() for h in headers}
@@ -149,7 +202,7 @@ def parse_document(doc: dict[str, Any]) -> DocView:
     # attach data rows to their sections
     by_key = {(s.table, s.band_row_id): s for s in sections}
     for t in tables:
-        cur: Section | None = None
+        cur: Section | None = by_key.get((t.index, ""))
         for r in t.rows:
             if r.kind == "band":
                 cur = by_key.get((t.index, r.row_id))
