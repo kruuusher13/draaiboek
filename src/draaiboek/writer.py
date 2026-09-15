@@ -102,10 +102,26 @@ def anchor_for(view: DocView, op: AddRow) -> Row:
 
 
 def plan_structural(view: DocView, edits: list[Op]) -> list[Structural]:
+    # "Replace the last row of this section" is an ordinary request: the anchor
+    # an append lands on may be one this same batch removes. Walk back to the
+    # previous surviving data row instead of refusing the whole batch.
+    doomed = {op.row_id for op in edits if isinstance(op, RemoveRow)}
+
+    def survivor(row: Row) -> Row:
+        if row.row_id not in doomed:
+            return row
+        table = view.tables[row.table]
+        for prev in reversed(table.rows[:row.index]):
+            if prev.row_id not in doomed and prev.kind in ("data", "header"):
+                return prev
+        return view.row(next(s.band_row_id for s in view.sections
+                             if s.table == row.table
+                             and row.row_id in s.row_ids)) or row
+
     out: list[Structural] = []
     for i, op in enumerate(edits):
         if isinstance(op, AddRow):
-            anchor = anchor_for(view, op)
+            anchor = survivor(anchor_for(view, op))
             table = view.tables[anchor.table]
             out.append(Structural("insert", table.start_index, anchor.index,
                                   anchor.start_index, i))

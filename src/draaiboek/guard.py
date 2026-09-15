@@ -34,6 +34,12 @@ def normalise(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip().lower()
 
 
+def bare(text: str) -> str:
+    """Normalised and stripped of punctuation, so a row cannot come back just
+    by gaining an exclamation mark or losing a hyphen."""
+    return re.sub(r"[^\w ]+", "", normalise(text)).strip()
+
+
 # A monetary-looking amount: 1.250,00 / 12,50 / 340 -- but not a time (18.30),
 # a date, or a bare count that a goods list needs ("40 barkrukken").
 _AMOUNT = re.compile(r"(?<![:\d])\d{1,3}(?:[.\s]\d{3})*[,.]\d{2}\b|[€$]\s*\d")
@@ -135,16 +141,31 @@ class Guard:
             tspec = spec.get("tombstones", {})
             if (tspec.get("enabled") and isinstance(op, AddRow) and tombstones
                     and i not in by_larissa):
-                key = normalise(" ".join(op.values))
-                longest = normalise(max(op.values, key=len)) if op.values else ""
+                key = bare(" ".join(op.values))
+                longest = bare(max(op.values, key=len)) if op.values else ""
                 for fp, rec in tombstones.items():
-                    if key == rec.get("key") or (longest and longest == rec.get("longest")):
+                    if key == bare(rec.get("key", "")) or (
+                            longest and longest == bare(rec.get("longest", ""))):
                         out.append(Violation(
                             severity=tspec.get("severity", "block"),
                             rule="tombstone", edit_index=i,
                             message=tspec.get("message", "").strip()
                                     + f" (removed by hand on {rec.get('removed_at', '?')[:10]})",
                             offending=rec.get("key", "")[:120],
+                        ))
+                        break
+
+            # 4b. ...nor may replace_text be used as a side door to the same end
+            if tspec.get("enabled") and isinstance(op, ReplaceText) and tombstones:
+                new = bare(op.replace)
+                for rec in tombstones.values():
+                    if new and new in (bare(rec.get("key", "")), bare(rec.get("longest", ""))):
+                        out.append(Violation(
+                            severity=tspec.get("severity", "block"),
+                            rule="tombstone", edit_index=i,
+                            message=tspec.get("message", "").strip()
+                                    + " A replacement may not put it back either.",
+                            offending=op.replace[:120],
                         ))
                         break
 

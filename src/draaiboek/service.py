@@ -150,6 +150,7 @@ class Draaiboek:
                                edits=[e.model_dump(mode="json") for e in req.edits])
             raise GuardRefusal(blocking(violations))
         warnings = [v for v in violations if v.severity == "warn"]
+        warnings += self._injection_warnings(req.edits)
 
         # 2b. Every claim must be supported by something we actually retrieved.
         problems = self._unsupported(req.edits)
@@ -566,6 +567,26 @@ class Draaiboek:
                              "source": f"{src.get('kind')} ({src.get('ref')})"})
         return gaps
 
+    def _injection_warnings(self, edits) -> list[Violation]:
+        """Flag a row whose source text is talking to the agent rather than to
+        Larissa. Not a refusal -- the mail may be legitimate and the decision is
+        hers -- but it never passes silently."""
+        out = []
+        for i, e in enumerate(edits):
+            src = getattr(e, "source", None)
+            if src is None or src.kind.value in ("larissa", "house_rule", "doc"):
+                continue
+            reasons = self.evidence.suspicion(src.ref)
+            if reasons:
+                out.append(Violation(
+                    severity="warn", rule="injected_source", edit_index=i,
+                    message=("The source for this row " + ", and ".join(reasons) +
+                             ". Someone outside the company wrote it. Check it with "
+                             "Larissa before trusting it."),
+                    offending=src.ref,
+                ))
+        return out
+
     # -- evidence ----------------------------------------------------------
     def _unsupported(self, edits) -> list[dict]:
         out = []
@@ -573,11 +594,27 @@ class Draaiboek:
             src = getattr(e, "source", None)
             if src is None:
                 continue
-            ok, why = self.evidence.verify(src.kind.value, src.ref, src.quote)
+            if src.kind.value == "house_rule":
+                ok, why = self._verify_house_rule(src.quote)
+            else:
+                ok, why = self.evidence.verify(src.kind.value, src.ref, src.quote)
             if not ok:
                 out.append({"edit_index": i, "ref": src.ref,
                             "kind": src.kind.value, "message": why})
         return out
+
+    def _verify_house_rule(self, quote: str) -> tuple[bool, str]:
+        """`house_rule` skips evidence checking, so without this it is the one
+        source kind an agent could use to launder anything it liked."""
+        from .sources.base import normalise
+        text = normalise(self.house_rules())
+        if normalise(quote) in text:
+            return True, ""
+        return False, (
+            f"No standing rule says {quote!r}. Rules live in rules/house_rules.md "
+            f"and only Larissa adds them. If this should be a rule, ask her -- do "
+            f"not assert it as one."
+        )
 
     def gather(self, query: str, kinds: list[str] | None = None,
                limit: int = 8) -> dict[str, Any]:

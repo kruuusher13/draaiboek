@@ -15,7 +15,8 @@ forbidden:
     # "kan je geen prijzen in het draaiboek noemen ... LOCK THIS IN!" (4 sep 2026)
     # Money, always -- a currency symbol or an amount.
     # NB: 'nacalculatie' is deliberately absent; she requires that word.
-    pattern: '(?i)(€|\$|\beur\s*\d|\d+\s*(?:euro|eur)\b|\bprijs\w*|\baanbetaling\b|\bborg\b|\bbtw\b|\b(?:uur)?tarief\b|\b(?:in|ex)cl\.?\s*btw\b|\bp\.p\.\s*\d|\d+[.,]\d{2}\s*(?:p\.p\.|per persoon)|\bfacturatie\b|\bfactuurnummer\b)'
+    pattern: '(?i)(€|\$|\beur\s*\d|\d+\s*(?:euro|eur)\b|\bprijs\w*|\baanbetaling\b|\bborg\b|\bbtw\b|\b(?:uur)?tarief\b|\b(?:in|ex)cl\.?\s*btw\b|\bp\.p\.\s*\d|\d+[.,]\d{2}\s*(?:p\.p\.|per persoon)|\bfacturatie\b|\bfactuurnummer\b
+             |\b\d{1,3}(?:\.\d{3})+,\d{2}\b)'
     message: >-
       No financials in a draaiboek. Prices, quotes, invoices, deposits and rates
       live in ClickUp/Xero only. If the money matters operationally, phrase it
@@ -27,7 +28,7 @@ forbidden:
     # These words are fine on their own -- "akkoord op de offerte ontvangen" is
     # a status, not a price; "incl. transport" describes goods. They are only
     # financial when an amount sits next to them in the same cell.
-    pattern: '(?i)(\boffert\w+|\bfactu(?:ur|ren|ratie)\w*|\bkosten\b|\bbedrag\b|\bdeposit\w*|\binvoice\b|\bomzet\b)'
+    pattern: '(?i)(\boffert\w+|\bfactu(?:ur|ren|ratie)\w*|\bkosten\b|\bbedrag\b|\bdeposit\w*|\binvoice\b|\bomzet\b|\btotaal\b|\bprijs\w*|\bp\.p\.)'
     message: >-
       This looks like a financial figure. The word itself is fine, but not with an
       amount beside it -- money lives in ClickUp/Xero, never in the draaiboek.
