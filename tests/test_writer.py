@@ -154,3 +154,18 @@ def test_category_shading_is_applied_to_the_whole_row(view):
     style = [r for r in reqs if "updateTableCellStyle" in r][0]["updateTableCellStyle"]
     assert style["tableRange"]["columnSpan"] == 3
     assert style["tableCellStyle"]["backgroundColor"]["color"]["rgbColor"]["green"] > 0.9
+
+
+def test_a_chapter_written_as_a_heading_can_still_be_appended_to():
+    """The new template puts the chapter name in a heading above its table,
+    so there is no band row inside it to anchor on."""
+    from draaiboek.reader import parse_document
+    doc = make_doc([[["TIJD", "WAT", "WIE"]]])
+    doc["body"]["content"].insert(1, {
+        "startIndex": 1, "endIndex": 12,
+        "paragraph": {"paragraphStyle": {"namedStyleType": "HEADING_2"},
+                      "elements": [{"textRun": {"content": "Tijdschema\n"}}]}})
+    v = parse_document(doc)
+    assert v.section_by_name("Tijdschema") is not None
+    a = anchor_for(v, add(["19:00", "Inloop", "Host"], section="Tijdschema"))
+    assert a.kind in ("header", "data")

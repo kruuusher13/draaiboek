@@ -87,7 +87,16 @@ def anchor_for(view: DocView, op: AddRow) -> Row:
         # band's merged cell, collapsing all text into column 0.
         band = view.row(section.band_row_id)
         if band is None:
-            raise WriteError(f"Section {op.section!r} has no band row")
+            # A chapter written as a heading above its table has no band row
+            # inside it. Its column header is the anchor; failing that, the
+            # last row of the table.
+            table = view.tables[section.table]
+            headers = [r for r in table.rows if r.kind == "header"]
+            if headers:
+                return headers[-1]
+            if table.rows:
+                return table.rows[-1]
+            raise WriteError(f"Section {op.section!r} has no rows to anchor on")
         table = view.tables[band.table]
         anchor = band
         for row in table.rows[band.index + 1:]:
