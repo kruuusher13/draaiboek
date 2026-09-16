@@ -67,6 +67,12 @@ Do not ask for approval and deploy in the same breath — ask, wait, then deploy
 what they agreed to. If they say yes to "the catering rows" and you deploy all
 forty-two, you have written thirty-eight things nobody approved.
 
+**A partial deploy closes the proposal.** Deploying three of forty-two writes
+those three and marks the whole proposal applied — the other thirty-nine are not
+parked waiting for a second yes. So never say "de rest zet ik er later bij uit
+hetzelfde voorstel"; that is not a thing you can do. Read the document again —
+you just changed it — and build a new proposal for what is left.
+
 If the document changed since the proposal was made, `deploy_proposal` refuses.
 That is Larissa having edited it. Re-read, rebuild on what is there now, propose
 again — never work around it.

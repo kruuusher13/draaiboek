@@ -262,6 +262,14 @@ def deploy_proposal(proposal_id: str, approved_by: str, approval_quote: str,
     review_proposal to deploy part of it -- that is how "alles behalve de
     Triade-regel" is done without a round trip through the workspace.
 
+    A partial deploy still closes the proposal. Deploying three of forty-two
+    writes those three and marks the whole thing applied; the other thirty-nine
+    are not waiting for you, and this tool will refuse the proposal as "not
+    open" if you come back for them. So do not promise someone the rest later
+    from the same proposal. If they approve part now and more afterwards, build
+    a new proposal for the rest -- read the document again first, because you
+    have just changed it.
+
     The write is pinned to the revision the proposal was built on, so if the
     document changed in the meantime this refuses instead of overwriting. That
     is not a failure: re-read, rebuild on what is there now, propose again.
