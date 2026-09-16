@@ -36,18 +36,25 @@ SCHEDULE_EN = [("TIME", 52), ("TO", 46), ("WHAT", 300), ("WHO", 128), ("NOTES", 
 ROOM = [("RUIMTE", 120), ("OPSTELLING", 585), ("AANTAL", 68)]
 ROOM_EN = [("AREA", 120), ("SETUP", 585), ("QTY", 68)]
 
+# Who is working, with the hours they are booked for -- "ook altijd de crew
+# benoemen, van wanneer tot wanneer zij geboekt zijn" (13 sep 2026) -- and the
+# number to reach them on. One chapter, because a name without a number is no
+# use on the day and a number without an arrival time is no use either.
+CREW = [("NAAM", 150), ("ROL", 170), ("TELEFOON", 120), ("VAN", 55),
+        ("TOT", 55), ("OPMERKINGEN", 223)]
+CREW_EN = [("NAME", 150), ("ROLE", 170), ("PHONE", 120), ("FROM", 55),
+           ("TO", 55), ("NOTES", 223)]
+
 PAIRS_NL = [
     (("Catering",    [("WANNEER", 74), ("WAT", 240), ("AANTAL", 62)]),
      ("Leveringen",  [("WANNEER", 70), ("LEVERANCIER", 110), ("GOEDEREN", 188)])),
-    (("Call sheet",  [("NAAM", 104), ("ROL", 114), ("TELEFOON", 86), ("AANWEZIG", 64)]),
-     ("Open punten", [("ONDERWERP", 84), ("VRAAG", 180), ("OPMERKINGEN", 104)])),
 ]
 PAIRS_EN = [
     (("Catering & drinks", [("WHEN", 74), ("WHAT", 240), ("QTY", 62)]),
      ("Deliveries",        [("WHEN", 70), ("SUPPLIER", 110), ("GOODS", 188)])),
-    (("Contacts",          [("NAME", 104), ("ROLE", 114), ("PHONE", 86), ("ON SITE", 64)]),
-     ("Open points",       [("SUBJECT", 84), ("QUESTION", 180), ("NOTES", 104)])),
 ]
+OPEN_NL = ("Open punten", [("ONDERWERP", 140), ("VRAAG", 400), ("OPMERKINGEN", 233)])
+OPEN_EN = ("Open points", [("SUBJECT", 140), ("QUESTION", 400), ("NOTES", 233)])
 HALF = 380
 TOP = [("{{TITEL}}\n{{ONDERTITEL}}\nversie 1 · {{BIJGEWERKT}}", 300),
        ("EERSTE CREW\n{{EERSTE}}", 150),
@@ -122,12 +129,16 @@ class Builder:
                            size=8, colour={"red": .55, "green": .53, "blue": .50})
         for left, right in PAIRS_NL:
             self.pair(left, right)
+        self.chapter("Bezetting & contacten", CREW)
+        self.chapter(*OPEN_NL)
 
         self.rule()
         self.chapter("Schedule", SCHEDULE_EN)
         self.chapter("Room & setup", ROOM_EN)
         for left, right in PAIRS_EN:
             self.pair(left, right)
+        self.chapter("Crew & contacts", CREW_EN)
+        self.chapter(*OPEN_EN)
         return self.doc
 
     # -- building blocks --------------------------------------------------
