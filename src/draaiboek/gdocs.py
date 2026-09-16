@@ -174,14 +174,34 @@ class Google:
 
     # -- operations --------------------------------------------------------
     def get_document(self, doc_id: str) -> dict[str, Any]:
-        return self.docs.documents().get(documentId=doc_id).execute()
+        return self._retrying(
+            lambda: self.docs.documents().get(documentId=doc_id).execute())
 
     def batch_update(self, doc_id: str, requests: list[dict]) -> dict[str, Any]:
         if not requests:
             return {}
-        return self.docs.documents().batchUpdate(
-            documentId=doc_id, body={"requests": requests}
-        ).execute()
+        return self._retrying(
+            lambda: self.docs.documents().batchUpdate(
+                documentId=doc_id, body={"requests": requests}).execute())
+
+    @staticmethod
+    def _retrying(call, attempts: int = 6):
+        """Google allows sixty writes a minute per user, and a document built
+        table by table runs through that. Rate limits and brief unavailability
+        are waits, not failures."""
+        from googleapiclient.errors import HttpError
+
+        delay = 2.0
+        for n in range(attempts):
+            try:
+                return call()
+            except HttpError as e:
+                status = getattr(e, "status_code", None) or getattr(e.resp, "status", 0)
+                if status not in (429, 500, 503) or n == attempts - 1:
+                    raise
+                time.sleep(delay)
+                delay = min(delay * 2, 30)
+        raise RuntimeError("unreachable")
 
     def copy_document(self, template_id: str, name: str, folder_id: str | None) -> str:
         body: dict[str, Any] = {"name": name}
