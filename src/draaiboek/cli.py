@@ -316,7 +316,9 @@ def cmd_doctor(args) -> int:
     if cfg.template_doc_id:
         try:
             tpl, _ = svc.read(cfg.template_doc_id, record=False)
-            filled = len(tpl.data_rows())
+            # Only rows inside a chapter count. The header block is a table too,
+            # and it is meant to hold the placeholders.
+            filled = sum(len(sec.row_ids) for sec in tpl.sections)
             check("template is empty", filled == 0,
                   f"{tpl.title[:44]!r}" + (f" -- {filled} rows of a real event" if filled else ""))
             if filled:
