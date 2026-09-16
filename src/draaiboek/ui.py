@@ -26,6 +26,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, quote, urlparse
 
+from .daily import event_date
 from .gdocs import AuthError
 from .service import Draaiboek, GuardRefusal, RevisionConflict, UnsupportedClaim
 from .sources.base import AttachmentFile
@@ -306,11 +307,22 @@ class Handler(BaseHTTPRequestHandler):
             return {"events": [], "error": "ClickUp is niet verbonden."}
         evs = (cu.search(query, limit=limit, hydrate=False) if query.strip()
                else cu.upcoming(limit=limit))
+        # The day of the event, decided here rather than in the page. ClickUp
+        # orders by due_date, which is often not the event -- so a list ordered
+        # upstream and dated in the browser disagreed with itself, and put
+        # Marron Festival between the two 21 September events. One date, one
+        # source: the page formats what it is given and never re-derives it.
         out = [{"ref": e.ref, "title": e.title, "url": e.url, "kind": "clickup",
                 "status": e.meta.get("status", ""), "doc_id": e.meta.get("draaiboek_doc_id"),
                 "quote_refs": e.meta.get("quote_refs") or [],
-                "cancelled": bool(e.meta.get("CANCELLED")), "due": e.meta.get("due_date")}
+                "cancelled": bool(e.meta.get("CANCELLED")), "due": e.meta.get("due_date"),
+                "date": d.isoformat() if (d := event_date(e)) else None}
                for e in evs]
+        # Only the standing list is chronological. Search comes back ranked --
+        # real events above invoice tasks that merely mention the name -- and
+        # re-sorting it by date throws that away.
+        if not query.strip():
+            out.sort(key=lambda r: (r["date"] is None, r["date"] or ""))
         return self.cache.put(key, {"events": out})
 
     @staticmethod
