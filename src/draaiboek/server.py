@@ -292,6 +292,21 @@ def read_attachment(ref: str, index: int = 0) -> dict[str, Any]:
 
 
 @mcp.tool()
+def daily_brief(days: int = 21) -> dict[str, Any]:
+    """Start here, every day.
+
+    Every upcoming event with what is still missing from it: no draaiboek, open
+    points, phone numbers not yet obtained, no Triade delivery booked, a head
+    count the room will not take. Ranked by how soon it bites, cancelled events
+    left out.
+
+    Work the urgent ones first. This replaces deciding by hand what to look at,
+    which is the same question every morning.
+    """
+    return {"ok": True, **_svc.daily_brief(days)}
+
+
+@mcp.tool()
 def event_format(title: str, guests: int = 0) -> dict[str, Any]:
     """What a recurring format normally needs: room, partner, standing routines,
     the documents it requires, and the order to place.

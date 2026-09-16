@@ -506,6 +506,11 @@ class Draaiboek:
             self.backend(doc_id).batch_update(doc_id, reqs)
         return changed
 
+    def daily_brief(self, days: int = 21) -> dict[str, Any]:
+        """What needs doing today, across every upcoming event."""
+        from .daily import Brief
+        return Brief(self).today(days)
+
     def event_format(self, title: str, guests: int | None = None) -> dict[str, Any]:
         """What this recurring format normally needs, and what to order for it."""
         from .formats import Formats

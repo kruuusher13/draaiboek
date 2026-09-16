@@ -113,6 +113,22 @@ def cmd_create(args) -> int:
     return 0
 
 
+def cmd_today(args) -> int:
+    b = _svc().daily_brief(args.days)
+    print(f"{b['date']} · {b['summary']}\n")
+    for e in b["events"]:
+        mark = "!" if e["urgent"] else " "
+        when = f"over {e['days']} dag" + ("" if e["days"] == 1 else "en")
+        if e["days"] == 0:
+            when = "VANDAAG"
+        print(f"{mark} {e['date']}  {when:<14} {e['title'][:52]}")
+        for t in e["todo"]:
+            print(f"      · {t['note'][:104]}")
+    if not b["events"]:
+        print("Niets te doen in dit venster.")
+    return 0
+
+
 def cmd_sources(args) -> int:
     svc = _svc()
     for name, st in svc.sources.status().items():
@@ -450,6 +466,10 @@ def main(argv: list[str] | None = None) -> int:
     tp.add_argument("source", help="doc id or URL of a draaiboek whose styling is correct")
     tp.add_argument("--name", default="Draaiboek — TEMPLATE")
     tp.set_defaults(fn=cmd_template)
+
+    td = sub.add_parser("today", help="what needs doing today, across all events")
+    td.add_argument("--days", type=int, default=21)
+    td.set_defaults(fn=cmd_today)
 
     sub.add_parser("sources", help="which systems are connected").set_defaults(fn=cmd_sources)
 
