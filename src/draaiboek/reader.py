@@ -19,7 +19,12 @@ HEADER_WORDS = {
     "tijd", "tijdstip", "activiteit", "omschrijving", "notities", "opmerkingen",
     "catering", "naam", "telefoon", "telefoonnummer", "aanwezig", "overige info",
     "rol", "functie", "wie", "wat", "leverancier", "levering", "aantal",
-    "antwoord", "status",
+    "antwoord", "status", "van", "tot", "wanneer", "goederen", "ruimte",
+    "opstelling", "sessie", "kaarten", "onderwerp", "vraag", "details", "gang",
+    # the English half of a bilingual draaiboek
+    "time", "to", "from", "what", "who", "notes", "name", "role", "phone",
+    "on site", "qty", "when", "supplier", "goods", "area", "setup", "session",
+    "tickets", "subject", "question",
 }
 
 
@@ -78,8 +83,15 @@ def _is_header(cells: list[Cell], below: list[Cell] | None = None) -> bool:
     # Not every draaiboek labels its columns "Tijd / Activiteit". Some say
     # "Gang / Omschrijving" or "Naam / Dieetwens". A shaded first row above
     # unshaded rows, with no times or numbers in it, is a column header.
-    if below is None or not cells or not below:
+    if not cells:
         return False
+    # An empty chapter is a single shaded row with nothing beneath it. That is
+    # still a header, not content -- otherwise a blank template reports itself
+    # as full of somebody else's event.
+    if below is None or not below:
+        shade = cells[0].background
+        return bool(shade and shade.lower() not in ("#ffffff", "#000000")) and \
+            not any(re.search(r"\d", v) for v in vals)
     shaded = cells[0].background
     if not shaded or shaded.lower() in ("#ffffff", "#000000"):
         return False
