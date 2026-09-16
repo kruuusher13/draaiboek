@@ -109,20 +109,63 @@ def _heading_text(el: dict) -> str | None:
     return m.group(1).strip() if m else None
 
 
+def _has_nested_table(el: dict) -> bool:
+    return any("table" in c
+               for row in el["table"].get("tableRows", [])
+               for cell in row.get("tableCells", [])
+               for c in cell.get("content", []))
+
+
+def _collect_tables(content: list[dict], out: list[dict],
+                    heading: str | None = None) -> None:
+    """Tables, including those nested inside a cell.
+
+    Landscape pages are wide enough to stand two short chapters side by side,
+    which in a Google Doc means a borderless two-column table with a real
+    table in each cell. The container itself is not a chapter -- it is
+    scaffolding -- so it is walked through rather than indexed.
+    """
+    for el in content or []:
+        if "table" not in el:
+            # A chapter standing in a column carries its own heading inside the
+            # cell, above its table.
+            found = _heading_text(el)
+            if found:
+                heading = found
+            continue
+        if not _has_nested_table(el):
+            out.append({"el": el, "heading": heading})
+            heading = None
+        for row in el["table"].get("tableRows", []):
+            for cell in row.get("tableCells", []):
+                _collect_tables(cell.get("content"), out, None)
+
+
 def parse_document(doc: dict[str, Any]) -> DocView:
     tables: list[Table] = []
     sections: list[Section] = []
     warnings: list[str] = []
 
-    elements = doc.get("body", {}).get("content", [])
-    t_idx = 0
+    elements: list[dict] = []
     pending_heading: str | None = None
-    for el in elements:
+    for el in doc.get("body", {}).get("content", []):
+        if "table" in el:
+            found: list[dict] = []
+            _collect_tables([el], found)
+            elements.extend(found)
+        else:
+            elements.append({"el": el, "heading": None})
+
+    t_idx = 0
+    for entry in elements:
+        el = entry["el"]
+        if entry.get("heading"):
+            pending_heading = entry["heading"]
         tbl = el.get("table")
         if not tbl:
-            found = _heading_text(el)
-            if found:
-                pending_heading = found
+            found_heading = _heading_text(el)
+            if found_heading:
+                pending_heading = found_heading
             continue
         columns = tbl.get("columns", 0) or max(
             (len(r.get("tableCells", [])) for r in tbl.get("tableRows", [])), default=0

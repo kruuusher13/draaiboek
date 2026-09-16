@@ -67,3 +67,19 @@ def test_gmail_searches_every_way_a_date_is_written():
     assert subject.startswith("subject:(") and '"26 september"' in anywhere
     assert '"2026/09/26"' in anywhere and anywhere.endswith("Lisa")
     assert Gmail._queries("Lisa-Lynde") == ["Lisa-Lynde"]
+
+
+def test_a_chapter_inside_a_layout_table_is_still_found():
+    """Two short chapters standing side by side means a table in a table. The
+    container is scaffolding; the chapters inside it are real."""
+    inner = make_doc([[["TIJD", "WAT"], ["19:00", "Inloop"]]])["body"]["content"][1]
+    outer = {"startIndex": 1, "endIndex": 400, "table": {"rows": 1, "columns": 2,
+        "tableRows": [{"startIndex": 2, "endIndex": 399, "tableCells": [
+            {"startIndex": 3, "endIndex": 200, "content": [inner]},
+            {"startIndex": 201, "endIndex": 398, "content": [
+                {"paragraph": {"elements": [{"textRun": {"content": "leeg\n"}}]}}]}]}]}}
+    v = parse_document({"documentId": "D", "title": "t", "revisionId": "r",
+                        "body": {"content": [outer]}})
+    assert len(v.tables) == 1                      # the container is not a chapter
+    assert v.tables[0].headers == ["TIJD", "WAT"]
+    assert any(r.values == ["19:00", "Inloop"] for r in v.tables[0].rows)

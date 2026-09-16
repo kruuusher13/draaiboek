@@ -22,18 +22,24 @@ WHITE = {"red": 1, "green": 1, "blue": 1}
 LINE = {"red": .86, "green": .84, "blue": .81}
 
 # chapter: (heading, [(column label, width in pt)], blank data rows)
-CHAPTERS = [
-    ("Tijdschema", [("TIJD", 58), ("TOT", 50), ("WAT", 300), ("WIE", 120), ("OPMERKINGEN", 220)], 0),
-    ("Techniek",   [("TIJD", 58), ("WAT", 420), ("WIE", 270)], 0),
-    ("Inrichting", [("RUIMTE", 120), ("WAT", 560), ("AANTAL", 68)], 0),
-    ("Catering",   [("SESSIE", 78), ("KAARTEN", 70), ("WAT", 530), ("AANTAL", 70)], 0),
-    ("Leveringen", [("WANNEER", 100), ("LEVERANCIER", 160), ("GOEDEREN", 488)], 0),
-    ("Call sheet", [("NAAM", 180), ("ROL", 220), ("TELEFOON", 140), ("AANWEZIG", 208)], 0),
-    ("Open punten", [("ONDERWERP", 150), ("VRAAG", 400), ("OPMERKINGEN", 198)], 0),
+# Full width, because the running order is the document.
+WIDE = ("Tijdschema",
+        [("TIJD", 52), ("TOT", 46), ("WAT", 310), ("WIE", 125), ("OPMERKINGEN", 240)])
+
+# Short chapters stand in pairs: a landscape page is wide enough for two, and
+# stacking them full width wastes half of every line.
+PAIRS = [
+    (("Techniek",   [("TIJD", 40), ("WAT", 218), ("WIE", 110)]),
+     ("Inrichting", [("RUIMTE", 84), ("WAT", 234), ("AANTAL", 50)])),
+    (("Catering",   [("SESSIE", 50), ("KAARTEN", 46), ("WAT", 216), ("AANTAL", 56)]),
+     ("Leveringen", [("WANNEER", 68), ("LEVERANCIER", 110), ("GOEDEREN", 190)])),
+    (("Call sheet", [("NAAM", 104), ("ROL", 114), ("TELEFOON", 86), ("AANWEZIG", 64)]),
+     ("Open punten", [("ONDERWERP", 84), ("VRAAG", 180), ("OPMERKINGEN", 104)])),
 ]
+HALF = 380
 TOP = [("{{TITEL}}\n{{ONDERTITEL}}\nversie 1 · {{BIJGEWERKT}}", 300),
        ("EERSTE CREW\n{{EERSTE}}", 150),
-       ("{{CONTACTEN}}", 298)]
+       ("{{CONTACTEN}}", 323)]
 LEGEND = "Techniek & Media      Hospitality & Catering      Inrichting & Logistiek      Algemeen"
 
 
@@ -79,8 +85,10 @@ class Builder:
 
         self.top_block()
         self.legend()
-        for heading, cols, blanks in CHAPTERS:
-            self.chapter(heading, cols, blanks)
+        self.footer()
+        self.chapter(*WIDE)
+        for left, right in PAIRS:
+            self.pair(left, right)
         return self.doc
 
     # -- building blocks --------------------------------------------------
@@ -119,6 +127,27 @@ class Builder:
         time.sleep(1.2)
         from draaiboek.reader import parse_document
         return parse_document(self.g.get_document(self.doc)).tables[-1]
+
+    def footer(self) -> None:
+        """Printed call sheets get separated. Every page says which event it
+        belongs to."""
+        try:
+            res = self.g.docs.documents().batchUpdate(
+                documentId=self.doc,
+                body={"requests": [{"createFooter": {"type": "DEFAULT"}}]}).execute()
+            fid = res["replies"][0]["createFooter"]["footerId"]
+        except Exception:  # noqa: BLE001 -- a template without a footer still works
+            return
+        text = "{{TITEL}}  ·  {{ONDERTITEL}}"
+        self.g.batch_update(self.doc, [
+            {"insertText": {"location": {"segmentId": fid, "index": 0}, "text": text}},
+            {"updateTextStyle": {
+                "range": {"segmentId": fid, "startIndex": 0, "endIndex": len(text)},
+                "textStyle": {"fontSize": {"magnitude": 7.5, "unit": "PT"},
+                              "weightedFontFamily": {"fontFamily": "Calibri"},
+                              "foregroundColor": {"color": {"rgbColor": {
+                                  "red": .55, "green": .53, "blue": .50}}}},
+                "fields": "fontSize,weightedFontFamily,foregroundColor"}}])
 
     def strip_to_logo(self) -> None:
         """Keep the wordmark paragraph, delete everything after it."""
@@ -174,10 +203,11 @@ class Builder:
         from draaiboek.reader import parse_document
         t = parse_document(self.g.get_document(self.doc)).tables[-1]
 
+        t_start = t.start_index
         style = []
         for i, (_, width) in enumerate(TOP):
             style.append({"updateTableColumnProperties": {
-                "tableStartLocation": {"index": t.start_index}, "columnIndices": [i],
+                "tableStartLocation": {"index": t_start}, "columnIndices": [i],
                 "tableColumnProperties": {"widthType": "FIXED_WIDTH",
                                           "width": {"magnitude": width, "unit": "PT"}},
                 "fields": "widthType,width"}})
@@ -189,36 +219,171 @@ class Builder:
                 "rowIndex": 0, "columnIndex": 1}, "rowSpan": 1, "columnSpan": 1},
             "tableCellStyle": {"backgroundColor": {"color": {"rgbColor": NAVY}}},
             "fields": "backgroundColor"}})
+        label_len = len("EERSTE CREW")
+        # The label is small and quiet; the time is the size of a headline.
         style.append({"updateTextStyle": {
-            "range": {"startIndex": mid.start_index + 1, "endIndex": mid.end_index - 1},
+            "range": {"startIndex": mid.start_index + 1,
+                      "endIndex": mid.start_index + 1 + label_len},
+            "textStyle": {"foregroundColor": {"color": {"rgbColor": {
+                              "red": .78, "green": .82, "blue": .87}}},
+                          "bold": False, "fontSize": {"magnitude": 8, "unit": "PT"},
+                          "weightedFontFamily": {"fontFamily": "Calibri"}},
+            "fields": "foregroundColor,bold,fontSize,weightedFontFamily"}})
+        style.append({"updateTextStyle": {
+            "range": {"startIndex": mid.start_index + 1 + label_len + 1,
+                      "endIndex": mid.end_index - 1},
             "textStyle": {"foregroundColor": {"color": {"rgbColor": WHITE}},
-                          "bold": True, "fontSize": {"magnitude": 11, "unit": "PT"}},
-            "fields": "foregroundColor,bold,fontSize"}})
-        first = t.rows[0].cells[0]
-        style.append({"updateTextStyle": {
-            "range": {"startIndex": first.start_index + 1,
-                      "endIndex": first.start_index + 1 + len("{{TITEL}}")},
-            "textStyle": {"bold": True, "fontSize": {"magnitude": 16, "unit": "PT"}},
-            "fields": "bold,fontSize"}})
-        self.g.batch_update(self.doc, style)
-
-    def chapter(self, heading: str, cols: list, blanks: int) -> None:
-        self.paragraph(heading, size=11, bold=True, colour=NAVY,
-                       space_before=14, heading=True)
-        t = self._table(1, len(cols))
-        head = t.rows[0]
-        reqs = [{"insertText": {"location": {"index": head.cells[i].start_index + 1},
-                                "text": label}}
-                for i, (label, _) in reversed(list(enumerate(cols)))]
-        self.g.batch_update(self.doc, reqs)
-        time.sleep(1.0)
-        from draaiboek.reader import parse_document
-        t = parse_document(self.g.get_document(self.doc)).tables[-1]
-        head = t.rows[0]
-
-        style = [{"updateTableCellStyle": {
+                          "bold": True, "fontSize": {"magnitude": 30, "unit": "PT"},
+                          "weightedFontFamily": {"fontFamily": "Calibri"}},
+            "fields": "foregroundColor,bold,fontSize,weightedFontFamily"}})
+        style.append({"updateTableCellStyle": {
             "tableRange": {"tableCellLocation": {
                 "tableStartLocation": {"index": t.start_index},
+                "rowIndex": 0, "columnIndex": 1}, "rowSpan": 1, "columnSpan": 1},
+            "tableCellStyle": {"paddingTop": {"magnitude": 8, "unit": "PT"},
+                               "paddingBottom": {"magnitude": 8, "unit": "PT"},
+                               "paddingLeft": {"magnitude": 12, "unit": "PT"},
+                               "contentAlignment": "MIDDLE"},
+            "fields": "paddingTop,paddingBottom,paddingLeft,contentAlignment"}})
+        first = t.rows[0].cells[0]
+        title_start = first.start_index + 1
+        style.append({"updateTextStyle": {
+            "range": {"startIndex": title_start,
+                      "endIndex": title_start + len("{{TITEL}}")},
+            "textStyle": {"bold": True, "fontSize": {"magnitude": 19, "unit": "PT"},
+                          "weightedFontFamily": {"fontFamily": "Calibri"},
+                          "foregroundColor": {"color": {"rgbColor": NAVY}}},
+            "fields": "bold,fontSize,weightedFontFamily,foregroundColor"}})
+        style.append({"updateTextStyle": {
+            "range": {"startIndex": title_start + len("{{TITEL}}") + 1,
+                      "endIndex": first.end_index - 1},
+            "textStyle": {"fontSize": {"magnitude": 9, "unit": "PT"},
+                          "weightedFontFamily": {"fontFamily": "Calibri"},
+                          "foregroundColor": {"color": {"rgbColor": {
+                              "red": .42, "green": .40, "blue": .38}}}},
+            "fields": "fontSize,weightedFontFamily,foregroundColor"}})
+        for idx in (0, 2):
+            style.append({"updateTableCellStyle": {
+                "tableRange": {"tableCellLocation": {
+                    "tableStartLocation": {"index": t.start_index},
+                    "rowIndex": 0, "columnIndex": idx}, "rowSpan": 1, "columnSpan": 1},
+                "tableCellStyle": {"paddingTop": {"magnitude": 9, "unit": "PT"},
+                                   "paddingBottom": {"magnitude": 9, "unit": "PT"},
+                                   "paddingLeft": {"magnitude": 11, "unit": "PT"},
+                                   "contentAlignment": "MIDDLE"},
+                "fields": "paddingTop,paddingBottom,paddingLeft,contentAlignment"}})
+        contacts = t.rows[0].cells[2]
+        style.append({"updateTextStyle": {
+            "range": {"startIndex": contacts.start_index + 1, "endIndex": contacts.end_index - 1},
+            "textStyle": {"fontSize": {"magnitude": 9.5, "unit": "PT"},
+                          "weightedFontFamily": {"fontFamily": "Calibri"}},
+            "fields": "fontSize,weightedFontFamily"}})
+        self.g.batch_update(self.doc, style)
+
+    def raw_tables(self) -> list[dict]:
+        return [el for el in self.g.get_document(self.doc)["body"]["content"]
+                if "table" in el]
+
+    def pair(self, left, right) -> None:
+        """Two chapters side by side, in a borderless two-column container."""
+        at = self.end()
+        self.g.batch_update(self.doc, [{"insertTable": {
+            "rows": 1, "columns": 2, "location": {"index": at}}}])
+        time.sleep(1.2)
+        container = self.raw_tables()[-1]
+        c_start = container["startIndex"]
+
+        invisible = {"color": {"color": {"rgbColor": {"red": 1, "green": 1, "blue": 1}}},
+                     "width": {"magnitude": 0, "unit": "PT"}, "dashStyle": "SOLID"}
+        self.g.batch_update(self.doc, [
+            {"updateTableCellStyle": {
+                "tableStartLocation": {"index": c_start},
+                "tableCellStyle": {"borderTop": invisible, "borderBottom": invisible,
+                                   "borderLeft": invisible, "borderRight": invisible,
+                                   "paddingLeft": {"magnitude": 0, "unit": "PT"},
+                                   "paddingRight": {"magnitude": 12, "unit": "PT"},
+                                   "paddingTop": {"magnitude": 0, "unit": "PT"},
+                                   "paddingBottom": {"magnitude": 0, "unit": "PT"}},
+                "fields": ("borderTop,borderBottom,borderLeft,borderRight,"
+                           "paddingLeft,paddingRight,paddingTop,paddingBottom")}}]
+            + [{"updateTableColumnProperties": {
+                "tableStartLocation": {"index": c_start}, "columnIndices": [i],
+                "tableColumnProperties": {"widthType": "FIXED_WIDTH",
+                                          "width": {"magnitude": HALF, "unit": "PT"}},
+                "fields": "widthType,width"}} for i in (0, 1)])
+
+        # right first: filling the left cell shifts everything after it
+        for col, (heading, cols) in ((1, right), (0, left)):
+            self.in_cell(col, heading, cols)
+
+    def cell_start(self, col: int) -> int:
+        container = self.raw_tables()[-1]
+        return container["table"]["tableRows"][0]["tableCells"][col]["startIndex"]
+
+    def in_cell(self, col: int, heading: str, cols: list) -> None:
+        at = self.cell_start(col) + 1
+        self.g.batch_update(self.doc, [{"insertText": {
+            "location": {"index": at}, "text": heading + "\n"}}])
+        self.g.batch_update(self.doc, [
+            {"updateTextStyle": {
+                "range": {"startIndex": at, "endIndex": at + len(heading)},
+                "textStyle": {"bold": True, "fontSize": {"magnitude": 12, "unit": "PT"},
+                              "weightedFontFamily": {"fontFamily": "Calibri"},
+                              "foregroundColor": {"color": {"rgbColor": NAVY}}},
+                "fields": "bold,fontSize,weightedFontFamily,foregroundColor"}},
+            {"updateParagraphStyle": {
+                "range": {"startIndex": at, "endIndex": at + len(heading)},
+                "paragraphStyle": {
+                    "namedStyleType": "HEADING_2",
+                    "spaceAbove": {"magnitude": 16, "unit": "PT"},
+                    "spaceBelow": {"magnitude": 3, "unit": "PT"},
+                    "borderBottom": {"color": {"color": {"rgbColor": NAVY}},
+                                     "width": {"magnitude": 1.25, "unit": "PT"},
+                                     "padding": {"magnitude": 2, "unit": "PT"},
+                                     "dashStyle": "SOLID"}},
+                "fields": "namedStyleType,spaceAbove,spaceBelow,borderBottom"}}])
+        time.sleep(0.8)
+        at = self.cell_start(col) + 1 + len(heading) + 1
+        self.g.batch_update(self.doc, [{"insertTable": {
+            "rows": 1, "columns": len(cols), "location": {"index": at}}}])
+        time.sleep(1.2)
+        self.style_table(lambda: self.nested_table(col), cols)
+
+    def nested_table(self, col: int):
+        from draaiboek.reader import parse_document
+        raw = self.g.get_document(self.doc)
+        container = [el for el in raw["body"]["content"] if "table" in el][-1]
+        cell = container["table"]["tableRows"][0]["tableCells"][col]
+        inner = [c for c in cell.get("content", []) if "table" in c][-1]
+        return parse_document({"documentId": "", "title": "", "revisionId": "",
+                               "body": {"content": [inner]}}).tables[0], inner["startIndex"]
+
+    def chapter(self, heading: str, cols: list) -> None:
+        self.paragraph(heading, size=13, bold=True, colour=NAVY,
+                       space_before=20, heading=True)
+        self._table(1, len(cols))
+        self.style_table(self.last_top_table, cols)
+
+    def last_top_table(self):
+        """Re-locate the table after text has shifted every index."""
+        from draaiboek.reader import parse_document
+        v = parse_document(self.g.get_document(self.doc))
+        t = v.tables[-1]
+        return t, t.start_index
+
+    def style_table(self, locate, cols: list) -> None:
+        t, t_start = locate()
+        head = t.rows[0]
+        self.g.batch_update(self.doc, [
+            {"insertText": {"location": {"index": head.cells[i].start_index + 1},
+                            "text": label}}
+            for i, (label, _) in reversed(list(enumerate(cols)))])
+        time.sleep(1.0)
+        t, t_start = locate()
+        head = t.rows[0]
+        style = [{"updateTableCellStyle": {
+            "tableRange": {"tableCellLocation": {
+                "tableStartLocation": {"index": t_start},
                 "rowIndex": 0, "columnIndex": 0}, "rowSpan": 1, "columnSpan": len(cols)},
             "tableCellStyle": {"backgroundColor": {"color": {"rgbColor": NAVY}},
                                "paddingTop": {"magnitude": 3, "unit": "PT"},
@@ -226,7 +391,7 @@ class Builder:
             "fields": "backgroundColor,paddingTop,paddingBottom"}}]
         for i, (label, width) in enumerate(cols):
             style.append({"updateTableColumnProperties": {
-                "tableStartLocation": {"index": t.start_index}, "columnIndices": [i],
+                "tableStartLocation": {"index": t_start}, "columnIndices": [i],
                 "tableColumnProperties": {"widthType": "FIXED_WIDTH",
                                           "width": {"magnitude": width, "unit": "PT"}},
                 "fields": "widthType,width"}})
@@ -234,19 +399,21 @@ class Builder:
             style.append({"updateTextStyle": {
                 "range": {"startIndex": c.start_index + 1, "endIndex": c.end_index - 1},
                 "textStyle": {"foregroundColor": {"color": {"rgbColor": WHITE}},
-                              "bold": True, "fontSize": {"magnitude": 8.5, "unit": "PT"},
+                              "bold": True, "fontSize": {"magnitude": 7.5, "unit": "PT"},
                               "weightedFontFamily": {"fontFamily": "Calibri"}},
                 "fields": "foregroundColor,bold,fontSize,weightedFontFamily"}})
         border = {"color": {"color": {"rgbColor": LINE}},
                   "width": {"magnitude": 0.75, "unit": "PT"}, "dashStyle": "SOLID"}
         style.append({"updateTableCellStyle": {
-            "tableStartLocation": {"index": t.start_index},
+            "tableStartLocation": {"index": t_start},
             "tableCellStyle": {"borderTop": border, "borderBottom": border,
                                "borderLeft": border, "borderRight": border,
-                               "paddingLeft": {"magnitude": 5, "unit": "PT"},
-                               "paddingRight": {"magnitude": 5, "unit": "PT"}},
+                               "paddingLeft": {"magnitude": 6, "unit": "PT"},
+                               "paddingRight": {"magnitude": 6, "unit": "PT"},
+                               "paddingTop": {"magnitude": 4, "unit": "PT"},
+                               "paddingBottom": {"magnitude": 4, "unit": "PT"}},
             "fields": ("borderTop,borderBottom,borderLeft,borderRight,"
-                       "paddingLeft,paddingRight")}})
+                       "paddingLeft,paddingRight,paddingTop,paddingBottom")}})
         self.g.batch_update(self.doc, style)
 
 
