@@ -186,8 +186,8 @@ class Builder:
             cursor += len(label) + 6
         reqs.append({"updateParagraphStyle": {
             "range": {"startIndex": at, "endIndex": at + len(text)},
-            "paragraphStyle": {"spaceAbove": {"magnitude": 8, "unit": "PT"},
-                               "spaceBelow": {"magnitude": 2, "unit": "PT"}},
+            "paragraphStyle": {"spaceAbove": {"magnitude": 6, "unit": "PT"},
+                               "spaceBelow": {"magnitude": 0, "unit": "PT"}},
             "fields": "spaceAbove,spaceBelow"}})
         self.g.batch_update(self.doc, reqs)
 
@@ -335,7 +335,7 @@ class Builder:
                 "range": {"startIndex": at, "endIndex": at + len(heading)},
                 "paragraphStyle": {
                     "namedStyleType": "HEADING_2",
-                    "spaceAbove": {"magnitude": 16, "unit": "PT"},
+                    "spaceAbove": {"magnitude": 9, "unit": "PT"},
                     "spaceBelow": {"magnitude": 3, "unit": "PT"},
                     "borderBottom": {"color": {"color": {"rgbColor": NAVY}},
                                      "width": {"magnitude": 1.25, "unit": "PT"},
@@ -360,7 +360,7 @@ class Builder:
 
     def chapter(self, heading: str, cols: list) -> None:
         self.paragraph(heading, size=13, bold=True, colour=NAVY,
-                       space_before=20, heading=True)
+                       space_before=12, heading=True)
         self._table(1, len(cols))
         self.style_table(self.last_top_table, cols)
 
@@ -410,8 +410,8 @@ class Builder:
                                "borderLeft": border, "borderRight": border,
                                "paddingLeft": {"magnitude": 6, "unit": "PT"},
                                "paddingRight": {"magnitude": 6, "unit": "PT"},
-                               "paddingTop": {"magnitude": 4, "unit": "PT"},
-                               "paddingBottom": {"magnitude": 4, "unit": "PT"}},
+                               "paddingTop": {"magnitude": 2.5, "unit": "PT"},
+                               "paddingBottom": {"magnitude": 2.5, "unit": "PT"}},
             "fields": ("borderTop,borderBottom,borderLeft,borderRight,"
                        "paddingLeft,paddingRight,paddingTop,paddingBottom")}})
         self.g.batch_update(self.doc, style)
