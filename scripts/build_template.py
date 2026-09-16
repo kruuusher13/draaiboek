@@ -434,9 +434,21 @@ class Builder:
         self.style_table(self.last_top_table, cols)
 
     def last_top_table(self):
-        """Re-locate the table after text has shifted every index."""
+        """Re-locate the table just built, after text has shifted every index.
+
+        While the first half is being built above the floor plan, the newest
+        table is not the last one in the document -- the plan sits below it.
+        """
         from draaiboek.reader import parse_document
         v = parse_document(self.g.get_document(self.doc))
+        if self.before_plan:
+            imgs = self.image_paragraphs()
+            if len(imgs) > 1:
+                cut = imgs[1]["startIndex"]
+                above = [t for t in v.tables if t.start_index < cut]
+                if above:
+                    t = above[-1]
+                    return t, t.start_index
         t = v.tables[-1]
         return t, t.start_index
 
