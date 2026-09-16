@@ -13,6 +13,8 @@ fi
 
 cd "$DEST"
 python3 -m venv .venv 2>/dev/null || true
+# A fresh venv can ship a pip too old for a pyproject-only editable install.
+.venv/bin/pip install --quiet --upgrade pip setuptools wheel
 .venv/bin/pip install --quiet -e .
 
 mkdir -p "$HOME/.draaiboek" && chmod 700 "$HOME/.draaiboek"
