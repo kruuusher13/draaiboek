@@ -56,6 +56,22 @@ answer — not an obstacle to route around.
      If they want something different, **`reject_proposal(id, comment)`** and
      build the next proposal from what they said.
 
+## How a yes actually arrives
+
+Not as "deploy proposal 3b16fca76b39". As **"ja doe maar"**, an hour later, in
+whichever topic she is in, about an event she has not named because to her it is
+obvious which one.
+
+So when someone agrees to something and you do not have an id in front of you,
+call **`open_proposals()`**. One open proposal and an unmistakable yes: deploy
+it. More than one, or any doubt which event she means, ask her by name — "de
+bruiloft van 26 september of de Rabobank-lunch?" — and wait for the answer. A
+yes meant for one event is not approval for another.
+
+Never make her look anything up. She does not have a proposal id, she will not
+go and find one, and asking her for one is the same as telling her to use the
+web page.
+
 ## Approval is theirs, never yours
 
 `approval_quote` is their message, word for word. It is the same rule the rows

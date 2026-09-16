@@ -225,6 +225,27 @@ def proposal_status(proposal_id: str) -> dict[str, Any]:
 
 
 @mcp.tool()
+def open_proposals() -> dict[str, Any]:
+    """Everything waiting for a yes, newest first.
+
+    Larissa does not say "deploy proposal 3b16fca76b39". She says "ja doe maar",
+    an hour later, in whichever topic she happens to be in. Call this to find
+    out what she means: each entry has the event as she knows it and the
+    proposal_id the other tools need.
+
+    One open proposal and an unmistakable yes -- deploy it. More than one, or
+    any doubt about which event she means, ask her by name ("de bruiloft van
+    26 september of de Rabobank-lunch?") and wait. Do not guess: a yes meant for
+    one event is not approval for another.
+    """
+    out = [{"proposal_id": r["id"], "title": r.get("title") or r.get("doc_title"),
+            "doc_id": r.get("doc_id"), "edits": len(r.get("edits", [])),
+            "created_at": r.get("created_at"), "expires_at": r.get("expires_at")}
+           for r in _svc.proposals.all(200) if r.get("status") == "open"]
+    return {"ok": True, "open": len(out), "proposals": out}
+
+
+@mcp.tool()
 def review_proposal(proposal_id: str) -> dict[str, Any]:
     """Every proposed change in readable form, so you can show it in the chat.
 
