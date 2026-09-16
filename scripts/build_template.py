@@ -22,19 +22,31 @@ WHITE = {"red": 1, "green": 1, "blue": 1}
 LINE = {"red": .86, "green": .84, "blue": .81}
 
 # chapter: (heading, [(column label, width in pt)], blank data rows)
-# Full width, because the running order is the document.
-WIDE = ("Tijdschema",
-        [("TIJD", 52), ("TOT", 46), ("WAT", 310), ("WIE", 125), ("OPMERKINGEN", 240)])
+# One schedule, not several.
+#
+# Every row is already colour-coded by department, so splitting the day into a
+# Techniek table and a Catering table encodes the same thing twice and hides
+# the one thing the crew needs: what happens next. The colour does the
+# grouping; the clock does the ordering. A banquet event order -- the venue
+# trade's own document -- works the same way: one minute-by-minute flow, with
+# setup, menu and plans as reference blocks beside it.
+SCHEDULE = [("TIJD", 52), ("TOT", 46), ("WAT", 300), ("WIE", 128), ("OPMERKINGEN", 247)]
+SCHEDULE_EN = [("TIME", 52), ("TO", 46), ("WHAT", 300), ("WHO", 128), ("NOTES", 247)]
 
-# Short chapters stand in pairs: a landscape page is wide enough for two, and
-# stacking them full width wastes half of every line.
-PAIRS = [
-    (("Techniek",   [("TIJD", 40), ("WAT", 218), ("WIE", 110)]),
-     ("Inrichting", [("RUIMTE", 84), ("WAT", 234), ("AANTAL", 50)])),
-    (("Catering",   [("SESSIE", 50), ("KAARTEN", 46), ("WAT", 216), ("AANTAL", 56)]),
-     ("Leveringen", [("WANNEER", 68), ("LEVERANCIER", 110), ("GOEDEREN", 190)])),
-    (("Call sheet", [("NAAM", 104), ("ROL", 114), ("TELEFOON", 86), ("AANWEZIG", 64)]),
+ROOM = [("RUIMTE", 120), ("OPSTELLING", 585), ("AANTAL", 68)]
+ROOM_EN = [("AREA", 120), ("SETUP", 585), ("QTY", 68)]
+
+PAIRS_NL = [
+    (("Catering",    [("WANNEER", 74), ("WAT", 240), ("AANTAL", 62)]),
+     ("Leveringen",  [("WANNEER", 70), ("LEVERANCIER", 110), ("GOEDEREN", 188)])),
+    (("Call sheet",  [("NAAM", 104), ("ROL", 114), ("TELEFOON", 86), ("AANWEZIG", 64)]),
      ("Open punten", [("ONDERWERP", 84), ("VRAAG", 180), ("OPMERKINGEN", 104)])),
+]
+PAIRS_EN = [
+    (("Catering & drinks", [("WHEN", 74), ("WHAT", 240), ("QTY", 62)]),
+     ("Deliveries",        [("WHEN", 70), ("SUPPLIER", 110), ("GOODS", 188)])),
+    (("Contacts",          [("NAME", 104), ("ROLE", 114), ("PHONE", 86), ("ON SITE", 64)]),
+     ("Open points",       [("SUBJECT", 84), ("QUESTION", 180), ("NOTES", 104)])),
 ]
 HALF = 380
 TOP = [("{{TITEL}}\n{{ONDERTITEL}}\nversie 1 · {{BIJGEWERKT}}", 300),
@@ -86,8 +98,18 @@ class Builder:
         self.top_block()
         self.legend()
         self.footer()
-        self.chapter(*WIDE)
-        for left, right in PAIRS:
+        # Dutch for the floor, English after it for Fever and international
+        # clients -- one document, so there is only ever one to update.
+        self.chapter("Tijdschema", SCHEDULE)
+        self.chapter("Zaal & opstelling", ROOM)
+        self.plan_slot("Standaard opstelling — vervang bij een andere indeling")
+        for left, right in PAIRS_NL:
+            self.pair(left, right)
+
+        self.rule()
+        self.chapter("Schedule", SCHEDULE_EN)
+        self.chapter("Room & setup", ROOM_EN)
+        for left, right in PAIRS_EN:
             self.pair(left, right)
         return self.doc
 
@@ -279,6 +301,20 @@ class Builder:
                           "weightedFontFamily": {"fontFamily": "Calibri"}},
             "fields": "fontSize,weightedFontFamily"}})
         self.g.batch_update(self.doc, style)
+
+    def rule(self) -> None:
+        """Where the Dutch half ends and the English half begins."""
+        at = self.end()
+        self.g.batch_update(self.doc, [{"insertPageBreak": {"location": {"index": at}}}])
+        time.sleep(0.6)
+
+    def plan_slot(self, caption: str) -> None:
+        """A place for the floor plan. The venue trade includes a diagram as a
+        matter of course, and Larissa has asked twice that the zaalopstelling
+        image stays in."""
+        self.paragraph("{{PLATTEGROND}}", size=9, colour={"red": .42, "green": .40,
+                                                          "blue": .38}, space_before=6)
+        self.paragraph(caption, size=8, colour={"red": .55, "green": .53, "blue": .50})
 
     def raw_tables(self) -> list[dict]:
         return [el for el in self.g.get_document(self.doc)["body"]["content"]
