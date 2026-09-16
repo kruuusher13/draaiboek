@@ -506,6 +506,15 @@ class Draaiboek:
             self.backend(doc_id).batch_update(doc_id, reqs)
         return changed
 
+    def event_format(self, title: str, guests: int | None = None) -> dict[str, Any]:
+        """What this recurring format normally needs, and what to order for it."""
+        from .formats import Formats
+        return Formats(self.cfg.rules_dir).standard_for(title, guests)
+
+    def tables_for(self, metres: float) -> dict[str, Any]:
+        from .formats import Formats
+        return Formats(self.cfg.rules_dir).tables_for(metres)
+
     def venue(self) -> dict[str, Any]:
         """The building: rooms, capacities and the thresholds that hang off
         them. Standing facts, so no draaiboek rediscovers them and no two

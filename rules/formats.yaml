@@ -1,0 +1,74 @@
+# Recurring formats — what "normal" looks like for each.
+#
+# She asks this outright: "Wat is de normale bestelling voor deze show wat
+# betreft glazen e.d.?" Nothing answered it, so every recurring event was
+# rebuilt from memory. Venue bars solve the same problem with par levels: a
+# standard per item, and an order worked out from it rather than from a walk
+# round the store.
+#
+# Every entry is sourced. Add to it the same way.
+
+formats:
+  aigtw:
+    name: FEVER · An Idiot's Guide to Wine
+    match: ["idiot", "aigtw", "wine tasting"]
+    partner: Fever
+    sessions: 2
+    doors_before_min: 30            # Larissa, 2 sep 2026 ("Lock This in")
+    room: Statafels met barkrukken — zoals de jazz-events, geen stoelen
+    partner_brings: [proefglaasjes, "1 coordinator + 3 medewerkers, 3 uur vooraf"]
+    venue_supplies: [wijn, "1 wijnglas per gast"]
+    technical: [1 microfoon, warme spot op de comedian]
+    per_head:
+      borrelplank: 0.1              # 119+200 kaarten -> 19/10/19 goedgekeurd, 14 sep
+    fixed_order:
+      - supplier: Sjatoo
+        items: ["60 Riesling", "60 Chardonnay", "60 Sangiovese", "60 Pinot",
+                "30 prosecco", "6 alcoholvrij"]
+        note: aantallen per sessiepaar; bijstellen op kaartverkoop
+      - supplier: Triade
+        items: [statafels, barkrukken]
+        note: bij Fever altijd extra barkrukken
+    extra_documents:                # Larissa, 12 sep 2026
+      - Wijnkaart — apart document, printbaar A4
+      - Borrelplank — apart document
+    interval_routine:               # Larissa, 5 sep 2026
+      - Plastic glazen opruimen
+      - Borrelplanken opruimen
+      - Glazen glas ophalen
+      - Tafels schoonmaken met Glassex
+      - Nieuwe plastic glazen en glazen glas klaarzetten
+      - Wijn 1 t/m 5 klaarzetten
+      - Gasten naar binnen
+
+  jazz_fever:
+    name: FEVER Jazz
+    match: ["jazz", "sinatra", "tjr"]
+    partner: Fever
+    doors_before_min: 30
+    room: Statafels en krukken per zone, podium, bar, garderobe
+    never: Stoelen noemen in de inrichting    # Larissa, 2 sep 2026 ("Lock this in")
+    fixed_order:
+      - supplier: Triade
+        items: [barkrukken, glaswerk]
+        note: Jazz Fever heeft altijd meer barkrukken nodig
+    presale: Fever verkoopt eten en drinken vooraf; lijst komt een week vooraf
+
+  bruiloft:
+    name: Bruiloft
+    match: ["bruiloft", "huwelijk", "wedding", "trouw"]
+    reminders:                      # Larissa, 13 sep 2026
+      - Bloemenvaas op de tafel waar het paar tekent
+      - Telefoonnummers van de ceremoniemeester(s) ontvangen?
+      - Bij zittend diner: per gang apart bord en bestek
+    fixed_order:
+      - supplier: Triade
+        items: [tafels, tafellakens, stoelen, barkrukken]
+
+# Thresholds that change an order, whatever the format.
+thresholds:
+  - over: 160
+    setup: plenaire theateropstelling
+    order: 40 extra zwarte stoelen bij Triade
+  - over: 175
+    arrange: extra self-service koffiepunt

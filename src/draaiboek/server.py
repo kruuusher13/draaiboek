@@ -292,6 +292,32 @@ def read_attachment(ref: str, index: int = 0) -> dict[str, Any]:
 
 
 @mcp.tool()
+def event_format(title: str, guests: int = 0) -> dict[str, Any]:
+    """What a recurring format normally needs: room, partner, standing routines,
+    the documents it requires, and the order to place.
+
+    Read it before building a draaiboek for a format that repeats -- AIGTW,
+    Jazz, a wedding. It answers "wat is de normale bestelling voor deze show",
+    which is otherwise rebuilt from memory every time. Quantities that depend on
+    head count are worked out from it; check them against the actual ticket
+    sales before ordering.
+
+    An unrecognised format says so rather than inventing a standard.
+    """
+    return {"ok": True, **_svc.event_format(title, guests or None)}
+
+
+@mcp.tool()
+def tables_for(metres: float) -> dict[str, Any]:
+    """How many tables of which length to order for a given run of metres.
+
+    Triade stocks 1.2 m and 2 m; this returns whole-unit combinations that are
+    never short, fewest pieces first.
+    """
+    return {"ok": True, **_svc.tables_for(metres)}
+
+
+@mcp.tool()
 def venue() -> dict[str, Any]:
     """Leeuwenbergh itself: rooms, capacities, and the rules that follow from
     them. Read it before writing an Inrichting chapter or a guest count -- the

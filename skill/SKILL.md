@@ -25,21 +25,36 @@ answer — not an obstacle to route around.
 
 1. **`house_rules()`** — first, every time. They change weekly, because she adds
    them in conversation. Never cache them.
-2. **`venue()`** — the building. Grote zaal holds 225, Córdoba 20, the small
+2. **`event_format(title, guests)`** — if this event repeats (AIGTW, Jazz, a
+   wedding), this is what normal looks like: the room, what the partner brings,
+   the standing routines, the documents the format needs, and the order to
+   place. It answers *"wat is de normale bestelling voor deze show"*, which is
+   otherwise rebuilt from memory every time. **`tables_for(metres)`** turns a
+   length into a Triade order. Quantities from head count are a starting point —
+   check them against actual ticket sales.
+3. **`venue()`** — the building. Grote zaal holds 225, Córdoba 20, the small
    meeting room 9; a full house is 200 across the three. Read it before writing
    a guest count or a room setup.
-3. **Find the document.** Check the ClickUp task description — she pastes the
+4. **Find the document.** Check the ClickUp task description — she pastes the
    link there. One almost always exists. `create_draaiboek` is only for an event
    that has never had one.
-4. **`read_draaiboek(doc_id)`** — always, immediately before writing. Note the
+5. **`read_draaiboek(doc_id)`** — always, immediately before writing. Note the
    `revision_id`. Read `changed_by_larissa_since_last_read`.
-5. **`gather(query)`** — Gmail, ClickUp, Xero, Missive and her chat history at
+6. **`gather(query)`** — Gmail, ClickUp, Xero, Missive and her chat history at
    once. Then **`read_attachment(ref, index)`** on anything attached: floor
    plans, riders, menus and signed quotes hold the numbers, and the filename
    alone tells you nothing.
-6. **`propose_edits(...)`** with that `revision_id`, a title she will recognise,
+7. **`propose_edits(...)`** with that `revision_id`, a title she will recognise,
    and a one-sentence `reason` on every edit. You propose; she deploys.
-7. Post the workspace link **at the bottom of the topic**. Every time.
+8. Post the workspace link **at the bottom of the topic**. Every time.
+
+## Who it is for
+
+> "het draaiboek is voor de crew en technici die op die specifieke dag het
+> evenement moeten doen" — Larissa, 13 Sep 2026
+
+Not for sales, not for the client. Write for the person standing in the room
+that day. Anything they cannot act on does not belong in it.
 
 ## The rule that matters most
 

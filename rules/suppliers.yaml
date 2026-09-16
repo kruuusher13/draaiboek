@@ -1,0 +1,35 @@
+# Suppliers, and the shapes they sell in.
+#
+# "Bij Triade heb je 120 en 2 meter tafels. Ik heb 11 meter tafel nodig.
+#  Hoeveel van welke moet ik dan bestellen?" -- Larissa, 13 sep 2026
+#
+# That question only needs asking because nothing records what a supplier
+# stocks. Pack sizes belong next to the supplier, so an order can be worked
+# out instead of guessed.
+
+suppliers:
+  - name: Triade
+    supplies: [tafels, stoelen, barkrukken, tafellakens, glaswerk, koelkasten, ovens]
+    ordering: online
+    note: Er is bij elk evenement een levering van Triade.
+    catalogue:
+      - item: rechte tafel
+        lengths_m: [1.2, 2.0]       # Larissa, 13 sep 2026
+      - item: ronde tafel
+        sizes: [groot, klein]
+      - item: stoelen
+        colours: [wit, grijs, zwart]
+      - item: barkrukken
+        note: transport apart meebestellen
+
+  - name: Sjatoo Wijnkopers
+    supplies: [wijn, prosecco, alcoholvrij]
+    contact: Patrick · info@sjatoo.nl
+    note: Retour meegeven kan; klaarzetten op een kar bij de beneden ingang.
+
+  - name: VHC Jongens
+    supplies: [cateringbenodigdheden, sauzen]
+    ordering: bestellen.vhcjongensbv.nl
+
+  - name: Lavazza
+    supplies: [koffie, thee]
