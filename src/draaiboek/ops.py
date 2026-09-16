@@ -52,7 +52,8 @@ class SourceKind(str, Enum):
     CLICKUP = "clickup"      # task field   -- ref = task id + field
     XERO = "xero"            # quote line   -- ref = quote number (verify vs task!)
     MISSIVE = "missive"      # a Missive conversation, including internal comments
-    LARISSA = "larissa"      # she said it directly -- ref = date/message
+    LARISSA = "larissa"      # she said it directly in this conversation
+    MEMORY = "memory"        # retrieved from her chat history -- ref = memory id
     HOUSE_RULE = "house_rule"  # a standing rule in rules/house_rules.md
     DOC = "doc"              # already in the document; a correction of it
 

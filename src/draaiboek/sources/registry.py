@@ -8,6 +8,7 @@ from typing import Any
 from .base import AttachmentFile, Evidence, SourceError
 from .clickup import ClickUp
 from .gmail import Gmail
+from .memory import Memory
 from .missive import Missive
 from .xero import Xero
 
@@ -17,10 +18,12 @@ class Sources:
         self.clickup = ClickUp()
         self.missive = Missive()
         self.xero = Xero()
+        self.memory = Memory()
         self.gmail = Gmail(google) if google is not None else None
 
     def _clients(self) -> dict[str, Any]:
-        c = {"clickup": self.clickup, "missive": self.missive, "xero": self.xero}
+        c = {"clickup": self.clickup, "missive": self.missive, "xero": self.xero,
+             "memory": self.memory}
         if self.gmail is not None:
             c["gmail"] = self.gmail
         return c
