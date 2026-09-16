@@ -102,14 +102,16 @@ class Builder:
                 "marginRight": {"magnitude": 34, "unit": "PT"}},
             "fields": "pageSize,marginTop,marginBottom,marginLeft,marginRight"}}])
 
+        # Everything up to and including the room chapter is built ABOVE the
+        # floor plan, so the drawing ends up inside "Zaal & opstelling" where a
+        # banquet event order puts it. Set this before the first insert or the
+        # header lands underneath the picture.
+        self.before_plan = self.plan_anchor
         self.top_block()
         self.legend()
         self.footer()
         # Dutch for the floor, English after it for Fever and international
         # clients -- one document, so there is only ever one to update.
-        # Build the first half above the plan so the drawing lands inside
-        # "Zaal & opstelling", where a banquet event order puts it.
-        self.before_plan = self.plan_anchor
         self.chapter("Tijdschema", SCHEDULE)
         self.chapter("Zaal & opstelling", ROOM)
         self.before_plan = False
