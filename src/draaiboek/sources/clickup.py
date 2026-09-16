@@ -106,6 +106,7 @@ class ClickUp:
     def __init__(self, token: str | None = None, team_id: str | None = None):
         self.token = token or os.environ.get("CLICKUP_TOKEN", "")
         self.team_id = team_id or os.environ.get("CLICKUP_TEAM_ID", "")
+        self._pages: dict[int, tuple[float, dict]] = {}
 
     def available(self) -> bool:
         return bool(self.token)
@@ -211,25 +212,57 @@ class ClickUp:
                 break
         return out
 
+    # ClickUp has no text search, so finding a task by name means walking the
+    # team's task list and matching here. Walking it a page at a time was the
+    # slowest thing in the system by an order of magnitude -- twenty-five round
+    # trips, one after another, to answer one question. The pages do not depend
+    # on each other, so they are fetched a batch at a time; the batch keeps the
+    # early exit that a page-at-a-time walk gets for free, instead of always
+    # paying for all twenty-five.
+    PAGE_BATCH = 5
+
+    # ClickUp answers this endpoint in anywhere from one to thirteen seconds for
+    # the same three-megabyte page, so the walk is worth not repeating. Building
+    # one draaiboek gathers several times over, and within that minute the team's
+    # task list is the same list; a short memory turns every gather after the
+    # first into no request at all. Short enough that a task created while you
+    # work still shows up on the next question.
+    PAGE_TTL = 90.0
+
+    def _page_of_tasks(self, page: int) -> dict:
+        import time
+        hit = self._pages.get(page)
+        if hit and (time.monotonic() - hit[0]) < self.PAGE_TTL:
+            return hit[1]
+        try:
+            data = self._get(f"/team/{self._team()}/task", page=page,
+                             include_closed="true", subtasks="true")
+        except SourceError:
+            return {"tasks": [], "last_page": True}
+        self._pages[page] = (time.monotonic(), data)
+        return data
+
     def _by_text(self, terms: list[str], limit: int, max_pages: int = 25,
                  when: date | None = None) -> list[dict]:
         if not terms and when is None:
             return []
-        out = []
-        for page in range(max_pages):
-            data = self._get(f"/team/{self._team()}/task", page=page,
-                             include_closed="true", subtasks="true")
-            tasks = data.get("tasks", [])
-            if not tasks:
-                break
-            for t in tasks:
-                name = t.get("name", "")
-                if (when is None or mentions(name, when)) and _fuzzy(terms, name):
-                    out.append(t)
-                    if len(out) >= limit:
-                        return out
-            if data.get("last_page"):
-                break
+        out: list[dict] = []
+        for start in range(0, max_pages, self.PAGE_BATCH):
+            pages = range(start, min(start + self.PAGE_BATCH, max_pages))
+            with ThreadPoolExecutor(max_workers=len(pages)) as pool:
+                batch = list(pool.map(self._page_of_tasks, pages))
+            for data in batch:
+                tasks = data.get("tasks", [])
+                if not tasks:
+                    return out
+                for t in tasks:
+                    name = t.get("name", "")
+                    if (when is None or mentions(name, when)) and _fuzzy(terms, name):
+                        out.append(t)
+                        if len(out) >= limit:
+                            return out
+                if data.get("last_page"):
+                    return out
         return out
 
     @staticmethod
