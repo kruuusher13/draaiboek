@@ -36,6 +36,23 @@ def _date(ms: Any) -> datetime.date | None:
         return None
 
 
+def event_date(ev) -> datetime.date | None:
+    """When the event actually is.
+
+    Tasks are named "YYYY/MM/DD · Client", and that date is the event. The
+    ClickUp due date often is not -- it drifts, or it is the date somebody has
+    to do something about the task. Trusting it put the Marron Festival on the
+    twentieth of September when the task itself says the fourth of October.
+    """
+    m = re.match(r"\s*(\d{4})/(\d{2})/(\d{2})", ev.title or "")
+    if m:
+        try:
+            return datetime.date(int(m[1]), int(m[2]), int(m[3]))
+        except ValueError:
+            pass
+    return _date(ev.meta.get("due_date"))
+
+
 class Brief:
     def __init__(self, svc):
         self.svc = svc
@@ -47,7 +64,7 @@ class Brief:
 
         rows: list[dict[str, Any]] = []
         for ev in events:
-            when = _date(ev.meta.get("due_date"))
+            when = event_date(ev)
             if not when or when < today or when > horizon:
                 continue
             if ev.meta.get("CANCELLED"):
@@ -88,7 +105,13 @@ class Brief:
         try:
             view, _ = self.svc.read(doc_id, record=False)
         except Exception as e:  # noqa: BLE001 -- an unreachable doc is itself the news
-            item["todo"].append({"what": "doc", "note": f"Draaiboek niet leesbaar: {str(e)[:70]}"})
+            shared = "permission" in str(e).lower() or "403" in str(e)
+            item["todo"].append({
+                "what": "toegang" if shared else "doc",
+                "note": ("Draaiboek is niet gedeeld met het systeem — deel het, of "
+                         "verplaats het naar de Draaiboeken-map."
+                         if shared else f"Draaiboek niet leesbaar: {str(e)[:70]}")})
+            item["urgent"] = shared
             return {}
 
         rows = view.data_rows()
