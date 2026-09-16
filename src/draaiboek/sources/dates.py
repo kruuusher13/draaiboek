@@ -106,3 +106,22 @@ def day_bounds_ms(d: date) -> tuple[int, int]:
     start = datetime(d.year, d.month, d.day)
     return (int(start.timestamp() * 1000) - 1,
             int((start + timedelta(days=1)).timestamp() * 1000))
+
+
+def from_task_name(title: str) -> date | None:
+    """The event date out of "YYYY/MM/DD · Client".
+
+    Larissa names every event task this way, and that date is the event. The
+    ClickUp due date often is not -- it drifts, or it marks when somebody has
+    to act on the task. Read the name first, everywhere, or two parts of this
+    system will disagree about when an event is.
+    """
+    m = re.match(r"\s*(\d{4})/(\d{1,2})/(\d{1,2})", title or "")
+    return _safe(int(m[1]), int(m[2]), int(m[3])) if m else None
+
+
+def from_epoch_ms(ms) -> date | None:
+    try:
+        return date.fromtimestamp(int(ms) / 1000)
+    except (TypeError, ValueError, OSError, OverflowError):
+        return None

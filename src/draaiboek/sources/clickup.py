@@ -15,12 +15,12 @@ from __future__ import annotations
 import os
 import re
 from concurrent.futures import ThreadPoolExecutor
-from datetime import date
+from datetime import date, timedelta
 
 import requests
 
 from .base import AttachmentFile, Evidence, SourceError, attachment_meta, download
-from .dates import day_bounds_ms, find_date, mentions
+from .dates import day_bounds_ms, find_date, from_epoch_ms, from_task_name, mentions
 
 API = "https://api.clickup.com/api/v2"
 
@@ -166,6 +166,13 @@ class ClickUp:
             # cannot be searched at all.
             "missive_ids": missive,
             "due_date": task.get("due_date"),
+            # When the event actually is, decided once, here. Everything
+            # downstream reads this instead of re-deciding: the brief, the
+            # workspace list and the event page each used to work it out for
+            # themselves, and disagreed.
+            "event_date": (d.isoformat()
+                           if (d := from_task_name(task.get("name", ""))
+                               or from_epoch_ms(task.get("due_date"))) else None),
         }
         if "_comments" in task:
             meta["comments"] = comments
@@ -183,7 +190,7 @@ class ClickUp:
             )
         return Evidence(
             kind="clickup", ref=f"clickup:{task['id']}", title=task.get("name", ""),
-            body=body, when=str(task.get("due_date") or task.get("date_updated", "")),
+            body=body, when=(meta["event_date"] or str(task.get("date_updated", ""))),
             url=task.get("url", ""), meta=meta,
         )
 
@@ -236,23 +243,43 @@ class ClickUp:
             )
         return sorted(tasks, key=score)
 
+    # The due date can sit either side of the event it belongs to, so the
+    # window fetched is wider than the window returned. Without the slack an
+    # event whose due date drifted out of range is not merely mis-sorted, it is
+    # absent from the list Larissa starts her day from, and nothing says so.
+    DRIFT_DAYS = 120
+
     def upcoming(self, days: int = 60, limit: int = 40) -> list[Evidence]:
-        """Events due from today, soonest first -- the list Larissa starts from."""
+        """Events happening from today, soonest first -- Larissa's starting list.
+
+        Ordered by the date in the task name, not the ClickUp due date. Those
+        disagree often enough that ordering by the due date put a 4 October
+        festival between two 21 September events.
+        """
         import time
         now_ms = int(time.time() * 1000) - 12 * 3600 * 1000  # include today
+        day_ms = 86_400_000
         out, seen = [], set()
-        for page in range(4):
+        for page in range(6):
             data = self._get(f"/team/{self._team()}/task", page=page, subtasks="false",
                              include_closed="true", order_by="due_date", reverse="false",
-                             due_date_gt=now_ms, due_date_lt=now_ms + days * 86_400_000)
+                             due_date_gt=now_ms - self.DRIFT_DAYS * day_ms,
+                             due_date_lt=now_ms + (days + self.DRIFT_DAYS) * day_ms)
             for t in data.get("tasks", []):
                 if t["id"] not in seen and "All Events" in (t.get("list") or {}).get("name", ""):
                     seen.add(t["id"])
                     out.append(t)
-            if data.get("last_page") or not data.get("tasks") or len(out) >= limit:
+            if data.get("last_page") or not data.get("tasks"):
                 break
-        out.sort(key=lambda t: int(t.get("due_date") or 0))
-        return [self._to_evidence(t) for t in out[:limit]]
+
+        today = date.today()
+        horizon = today + timedelta(days=days)
+        dated = [(d, t) for t in out
+                 if (d := from_task_name(t.get("name", ""))
+                     or from_epoch_ms(t.get("due_date")))
+                 and today <= d <= horizon]
+        dated.sort(key=lambda p: (p[0], p[1].get("name", "")))
+        return [self._to_evidence(t) for _, t in dated[:limit]]
 
     def _hydrate(self, tasks: list[dict]) -> list[dict]:
         """Re-read each task on its own endpoint, which is the only one that

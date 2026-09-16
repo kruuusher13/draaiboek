@@ -16,6 +16,8 @@ import datetime
 import re
 from typing import Any
 
+from .sources.dates import from_task_name
+
 PENDING = re.compile(
     r"(?i)nog\s+(?:op\s*te\s*vragen|opvragen|bevestigen|ontvangen|inplannen|afstemmen)"
     r"|\[\s*nog[^\]]*\]|nog\s+geen\s+antwoord|\bonbekend\b")
@@ -43,14 +45,17 @@ def event_date(ev) -> datetime.date | None:
     ClickUp due date often is not -- it drifts, or it is the date somebody has
     to do something about the task. Trusting it put the Marron Festival on the
     twentieth of September when the task itself says the fourth of October.
+
+    The source settles this now and carries it in `event_date`; the parse here
+    is for evidence that predates that, or that comes from somewhere else.
     """
-    m = re.match(r"\s*(\d{4})/(\d{2})/(\d{2})", ev.title or "")
-    if m:
+    iso = ev.meta.get("event_date")
+    if iso:
         try:
-            return datetime.date(int(m[1]), int(m[2]), int(m[3]))
+            return datetime.date.fromisoformat(iso)
         except ValueError:
             pass
-    return _date(ev.meta.get("due_date"))
+    return from_task_name(ev.title or "") or _date(ev.meta.get("due_date"))
 
 
 class Brief:
@@ -60,7 +65,12 @@ class Brief:
     def today(self, days: int = 21, today: datetime.date | None = None) -> dict[str, Any]:
         today = today or datetime.date.today()
         horizon = today + datetime.timedelta(days=days)
-        events = self.svc.sources.clickup.upcoming(60)
+        # Ask for the window this brief actually reports on, and for enough of
+        # it. Asking for sixty days and taking the default forty tasks quietly
+        # cut a fifty-events-a-month venue down to whatever fitted: the brief
+        # listed twelve of the thirty-one events in its own three weeks, and
+        # said nothing about the rest.
+        events = self.svc.sources.clickup.upcoming(days, limit=250)
 
         rows: list[dict[str, Any]] = []
         for ev in events:
@@ -140,9 +150,16 @@ class Brief:
         if not rows:
             return "Geen evenementen in dit venster."
         no_doc = sum(1 for r in rows if not r["doc_id"])
+        # A draaiboek the system cannot open is not a draaiboek it has. Counting
+        # only the events with no document at all said "6 zonder draaiboek" on a
+        # morning when the other six were unreadable too, and read like a
+        # half-full list rather than an empty one.
+        locked = sum(1 for r in rows if any(t["what"] == "toegang" for t in r["todo"]))
         parts = [f"{len(rows)} evenement(en)"]
         if no_doc:
             parts.append(f"{no_doc} zonder draaiboek")
+        if locked:
+            parts.append(f"{locked} niet gedeeld")
         if urgent:
             first = urgent[0]
             parts.append(f"eerst: {first['title'][:48]} over {first['days']} dag(en)")
