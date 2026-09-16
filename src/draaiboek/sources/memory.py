@@ -43,6 +43,11 @@ class Memory:
         return bool(self.base)
 
     def _get(self, path: str, **params):
+        if not self.base:
+            raise SourceError(
+                "No memory store configured. Set DRAAIBOEK_MEMORY_URL to reach "
+                "Larissa's chat history; without it, what she has said in chat "
+                "is invisible and only written sources can be quoted.")
         r = requests.get(f"{self.base}{path}", params=params, timeout=30)
         if r.status_code >= 400:
             raise SourceError(f"Memory {path} -> {r.status_code}: {r.text[:160]}")
