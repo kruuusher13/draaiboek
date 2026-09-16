@@ -5,8 +5,24 @@
 | You are | Read |
 |---|---|
 | Larissa | **[HANDLEIDING.md](HANDLEIDING.md)** — de werkplek, in gewoon Nederlands |
-| Florentine (the agent) | **[SETUP-FLORENTINE.md](SETUP-FLORENTINE.md)** to install, then **[AGENT.md](AGENT.md)** to work |
+| An agent | **[skill/SKILL.md](skill/SKILL.md)** — the whole operating procedure, self-contained |
+| Setting an agent up | `skill/install.sh` — clone, install, print the MCP config |
 | Romir | the rest of this file |
+
+## Give it to any agent
+
+```bash
+curl -sSL https://raw.githubusercontent.com/kruuusher13/draaiboek/main/skill/install.sh | bash
+```
+
+It installs, creates `~/.draaiboek/env` for the credentials, and prints the MCP
+block to paste into the agent's configuration. Then hand the agent
+`skill/SKILL.md`.
+
+Nothing in it is specific to one agent. The knowledge that used to live inside
+Florentine's memory — the session times, the interval routine, which technician
+is free — is now read over HTTP by whoever holds the skill, so a fresh
+operations agent starts with everything.
 
 ---
 
