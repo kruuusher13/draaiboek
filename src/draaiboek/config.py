@@ -37,6 +37,11 @@ class Config:
     # Hermes proposes; only Larissa's deploy writes. DRAAIBOEK_DIRECT_APPLY=1
     # lets the MCP apply_edits tool write without her (operator use only).
     direct_apply: bool = False
+    # A person can also say yes in the conversation instead of the workspace.
+    # DRAAIBOEK_CHAT_DEPLOY=1 allows deploy_proposal, which still requires an
+    # existing proposal, a named approver and their words quoted literally.
+    # This is not direct_apply: nothing here lets the agent write unreviewed.
+    chat_deploy: bool = False
 
     @property
     def ledger_path(self) -> Path:
@@ -85,6 +90,8 @@ def load_config() -> Config:
         public_url=(os.environ.get("DRAAIBOEK_PUBLIC_URL") or "http://127.0.0.1:8765").rstrip("/"),
         ui_key=os.environ.get("DRAAIBOEK_UI_KEY") or None,
         direct_apply=os.environ.get("DRAAIBOEK_DIRECT_APPLY", "").strip().lower()
+        in ("1", "true", "yes"),
+        chat_deploy=os.environ.get("DRAAIBOEK_CHAT_DEPLOY", "").strip().lower()
         in ("1", "true", "yes"),
     )
     cfg.ensure_dirs()

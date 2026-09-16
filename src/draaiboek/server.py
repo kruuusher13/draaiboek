@@ -28,11 +28,14 @@ mcp = _Server(
     instructions=(
         "Surgical editing of Leeuwenbergh event runbooks. Call house_rules() first, "
         "every time. Always read_draaiboek() before proposing and pass its revision_id "
-        "back to propose_edits(). You never write to a draaiboek yourself: "
-        "propose_edits() returns a workspace_url, which you post to Larissa on Telegram; "
-        "she reviews and deploys there. Check the outcome with proposal_status(). Every fact "
-        "needs a source with a literal quote -- if you cannot quote it, put it in Open "
-        "Punten as a question instead of writing it as fact. There is no regenerate."
+        "back to propose_edits(). You never decide to write: propose_edits() writes "
+        "nothing and returns a proposal a person has to approve. They can do that in "
+        "the workspace -- post the workspace_url -- or in the conversation, by telling "
+        "you to go ahead: then call review_proposal() to show them what is in it and "
+        "deploy_proposal() with their words quoted. Never supply an approval you were "
+        "not given. Every fact needs a source with a literal quote -- if you cannot "
+        "quote it, put it in Open Punten as a question instead of writing it as fact. "
+        "There is no regenerate."
     ),
 )
 _cfg = load_config()
@@ -219,6 +222,90 @@ def proposal_status(proposal_id: str) -> dict[str, Any]:
         "included", "own_edits", "answers", "comment", "result")},
         "edits": len(rec.get("edits", [])),
         "url": f"https://docs.google.com/document/d/{rec['doc_id']}/edit"}
+
+
+@mcp.tool()
+def review_proposal(proposal_id: str) -> dict[str, Any]:
+    """Every proposed change in readable form, so you can show it in the chat.
+
+    Use this when someone asks what you are proposing, or before you ask them to
+    approve it. Each item has the index you pass to `include` in deploy_proposal,
+    the section it lands in, the row as it will read, and the reason. Read them
+    out grouped by section -- a person deciding does not want forty-two lines in
+    one block.
+    """
+    rec = _svc.proposals.get(proposal_id)
+    if rec is None:
+        return _fail("not_found", f"No proposal {proposal_id!r}.")
+    display = rec.get("display") or []
+    items = [{"index": i, **(d if isinstance(d, dict) else {"text": str(d)})}
+             for i, d in enumerate(display)]
+    return {"ok": True, "id": rec["id"], "status": rec.get("status"),
+            "title": rec.get("title"), "doc_id": rec.get("doc_id"),
+            "note": rec.get("note"), "warnings": rec.get("warnings") or [],
+            "edits": len(rec.get("edits", [])), "items": items,
+            "url": f"https://docs.google.com/document/d/{rec['doc_id']}/edit"}
+
+
+@mcp.tool()
+def deploy_proposal(proposal_id: str, approved_by: str, approval_quote: str,
+                    include: list[int] | None = None) -> dict[str, Any]:
+    """Write a proposal that a person approved in the conversation.
+
+    Only call this when someone has actually said yes, in words, in this
+    conversation. `approval_quote` is their message, literally -- the same rule
+    the rows live under, applied to the approval itself. Do not paraphrase it,
+    do not summarise it, and never supply it for a yes you did not receive.
+    "Ja doe maar" is a quote; "Romir approved it" is not.
+
+    `include`: leave empty to deploy everything, or pass the indices from
+    review_proposal to deploy part of it -- that is how "alles behalve de
+    Triade-regel" is done without a round trip through the workspace.
+
+    The write is pinned to the revision the proposal was built on, so if the
+    document changed in the meantime this refuses instead of overwriting. That
+    is not a failure: re-read, rebuild on what is there now, propose again.
+    """
+    try:
+        out = _svc.deploy_from_chat(proposal_id, approved_by, approval_quote, include)
+    except PermissionError as e:
+        return _fail("chat_deploy_disabled", str(e),
+                     fix="Post the workspace_url instead, or ask the operator to enable it.")
+    except ValueError as e:
+        return _fail("cannot_deploy", str(e))
+    except RevisionConflict as e:
+        return _fail("revision_conflict",
+                     "The draaiboek changed after this proposal was made. Nothing was written.",
+                     current_revision=e.actual,
+                     fix="Call read_draaiboek again, rebuild the edits on what is there now, "
+                         "and propose again before asking for approval.")
+    except UnsupportedClaim as e:
+        return _fail("unsupported_claim", "A source no longer supports its row.",
+                     problems=e.problems)
+    except GuardRefusal as e:
+        return _fail("refused_by_house_rules", str(e),
+                     violations=[v.to_dict() for v in e.violations])
+    except (WriteError, AuthError) as e:
+        return _fail("deploy_failed", str(e))
+    except Exception as e:  # noqa: BLE001
+        return _fail("deploy_failed", f"{type(e).__name__}: {e}")
+    return {"ok": True, **out,
+            "next": "Tell them what went in and what is still open. The document is now live."}
+
+
+@mcp.tool()
+def reject_proposal(proposal_id: str, comment: str) -> dict[str, Any]:
+    """Close a proposal that was turned down, recording why.
+
+    `comment` is what they want different, in their words. Then build the next
+    proposal from it -- do not re-propose the same batch.
+    """
+    try:
+        rec = _svc.reject_proposal(proposal_id, comment)
+    except ValueError as e:
+        return _fail("cannot_reject", str(e))
+    return {"ok": True, "id": rec["id"], "status": rec["status"],
+            "comment": rec.get("comment", "")}
 
 
 @mcp.tool()

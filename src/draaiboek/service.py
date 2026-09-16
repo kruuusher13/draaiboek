@@ -448,6 +448,56 @@ class Draaiboek:
             "quote_gaps": self.quote_gaps(doc_id),
         }
 
+    def deploy_from_chat(self, proposal_id: str, approved_by: str, approval_quote: str,
+                         include: list[int] | None = None) -> dict[str, Any]:
+        """Deploy a proposal that a person approved in conversation.
+
+        The workspace is one place a human can say yes; it is not the only one.
+        What protects the document is not the web page -- it is that a person
+        decided, that the write is locked to the revision the proposal was built
+        on, and that every row still carries a quotable source. All of that holds
+        here.
+
+        Two things it refuses. It will not deploy without a literal quote of the
+        message that approved it -- the same rule the rows themselves live under,
+        applied to the approval: if you cannot quote it, you were not told to do
+        it. And it pins the write to the revision the proposal was made against,
+        so a document somebody edited in the meantime is a conflict rather than
+        an overwrite. Her edits still win.
+        """
+        if not self.cfg.chat_deploy:
+            raise PermissionError(
+                "Deploying from chat is switched off. Set DRAAIBOEK_CHAT_DEPLOY=1 to "
+                "allow it, or send the workspace link and let her deploy there.")
+        who = (approved_by or "").strip()
+        quote = (approval_quote or "").strip()
+        if not who or len(quote) < 3:
+            raise ValueError(
+                "Deploying needs `approved_by` (who said yes) and `approval_quote` (their "
+                "words, literally). Without both there is no record that anyone agreed.")
+
+        rec = self.proposals.get(proposal_id)
+        if rec is None:
+            raise ValueError(f"No proposal {proposal_id!r}.")
+        if rec.get("status") != P.OPEN:
+            raise ValueError(f"Proposal {proposal_id} is {rec.get('status')}, not open.")
+
+        total = len(rec.get("edits", []))
+        chosen = sorted({i for i in (include if include is not None else range(total))
+                         if 0 <= i < total})
+        if not chosen:
+            raise ValueError("No edits selected, so there is nothing to deploy.")
+
+        self.ledger.append(event="approved", doc_id=rec["doc_id"], proposal=rec["id"],
+                           by=who[:120], quote=quote[:500], channel="chat",
+                           included=chosen, of=total)
+        out = self.deploy(rec["doc_id"], rec["expected_revision"],
+                          proposal_id=rec["id"], include=chosen)
+        out["approved_by"] = who
+        out["included"] = chosen
+        out["url"] = f"https://docs.google.com/document/d/{rec['doc_id']}/edit"
+        return out
+
     def reject_proposal(self, proposal_id: str, comment: str = "") -> dict:
         """Send the proposal back to Hermes with what should be different."""
         with self.proposals.lock:

@@ -45,8 +45,31 @@ answer — not an obstacle to route around.
    plans, riders, menus and signed quotes hold the numbers, and the filename
    alone tells you nothing.
 7. **`propose_edits(...)`** with that `revision_id`, a title she will recognise,
-   and a one-sentence `reason` on every edit. You propose; she deploys.
-8. Post the workspace link **at the bottom of the topic**. Every time.
+   and a one-sentence `reason` on every edit. Nothing is written by this.
+8. **Get it approved.** Two ways, and the person chooses — not you:
+   - Post the workspace link **at the bottom of the topic**, and she reviews,
+     answers open questions, adjusts and deploys there.
+   - Or settle it in the conversation: **`review_proposal(id)`** and read the
+     changes out grouped by chapter, then **`deploy_proposal(id, approved_by,
+     approval_quote)`** once they have actually said yes. `include=[…]` deploys
+     part of it, so "alles behalve de Triade-regel" needs no web page at all.
+     If they want something different, **`reject_proposal(id, comment)`** and
+     build the next proposal from what they said.
+
+## Approval is theirs, never yours
+
+`approval_quote` is their message, word for word. It is the same rule the rows
+live under, applied to the approval: **if you cannot quote it, you were not told
+to do it.** "Ja doe maar" is a quote. "Romir approved it" is not, and neither is
+a yes you inferred from enthusiasm about a draft.
+
+Do not ask for approval and deploy in the same breath — ask, wait, then deploy
+what they agreed to. If they say yes to "the catering rows" and you deploy all
+forty-two, you have written thirty-eight things nobody approved.
+
+If the document changed since the proposal was made, `deploy_proposal` refuses.
+That is Larissa having edited it. Re-read, rebuild on what is there now, propose
+again — never work around it.
 
 ## Who it is for
 
