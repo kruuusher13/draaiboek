@@ -84,13 +84,38 @@ class Brief:
 
         rows.sort(key=lambda r: (not r["urgent"], r["days"], r["title"]))
         urgent = [r for r in rows if r["urgent"]]
+        waiting = self._waiting(today)
         return {
             "date": today.isoformat(),
             "window_days": days,
             "events": rows,
             "urgent": len(urgent),
-            "summary": self._summary(rows, urgent),
+            "waiting": waiting,
+            "summary": self._summary(rows, urgent, waiting),
         }
+
+    def _waiting(self, today: datetime.date) -> list[dict[str, Any]]:
+        """Proposals sitting unanswered.
+
+        A proposal expires after a fortnight and takes its rows with it, without
+        telling anyone. This is the one thing Larissa reads every morning, so a
+        batch of sourced work quietly running out of time belongs in it.
+        """
+        out = []
+        for rec in self.svc.proposals.all(200):
+            if rec.get("status") != "open":
+                continue
+            left = None
+            try:
+                left = (datetime.date.fromisoformat(rec["expires_at"][:10]) - today).days
+            except (KeyError, TypeError, ValueError):
+                pass
+            out.append({"proposal_id": rec["id"],
+                        "title": rec.get("title") or rec.get("doc_title") or "",
+                        "edits": len(rec.get("edits", [])),
+                        "expires_in_days": left})
+        out.sort(key=lambda r: (r["expires_in_days"] is None, r["expires_in_days"]))
+        return out
 
     def _event(self, ev, when: datetime.date, today: datetime.date) -> dict[str, Any]:
         days = (when - today).days
@@ -146,9 +171,12 @@ class Brief:
         return {}
 
     @staticmethod
-    def _summary(rows: list[dict], urgent: list[dict]) -> str:
+    def _summary(rows: list[dict], urgent: list[dict], waiting: list[dict] = ()) -> str:
         if not rows:
-            return "Geen evenementen in dit venster."
+            return ("Geen evenementen in dit venster."
+                    if not waiting else
+                    f"Geen evenementen in dit venster · {len(waiting)} voorstel(len) "
+                    f"wachten op jou.")
         no_doc = sum(1 for r in rows if not r["doc_id"])
         # A draaiboek the system cannot open is not a draaiboek it has. Counting
         # only the events with no document at all said "6 zonder draaiboek" on a
@@ -160,6 +188,8 @@ class Brief:
             parts.append(f"{no_doc} zonder draaiboek")
         if locked:
             parts.append(f"{locked} niet gedeeld")
+        if waiting:
+            parts.append(f"{len(waiting)} voorstel(len) wachten op jou")
         if urgent:
             first = urgent[0]
             parts.append(f"eerst: {first['title'][:48]} over {first['days']} dag(en)")

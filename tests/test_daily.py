@@ -90,11 +90,20 @@ class FakeSources:
         self.clickup = FakeClickUp(events)
 
 
+class FakeProposals:
+    def __init__(self, recs=()):
+        self.recs = list(recs)
+
+    def all(self, limit=50):
+        return self.recs[:limit]
+
+
 class FakeSvc:
     """Reads always fail -- the interesting case is what the brief says then."""
 
-    def __init__(self, events, error=None):
+    def __init__(self, events, error=None, proposals=()):
         self.sources = FakeSources(events)
+        self.proposals = FakeProposals(proposals)
         self.error = error
 
     def read(self, doc_id, record=True):
@@ -104,8 +113,14 @@ class FakeSvc:
         return []
 
 
-def brief(events, error=None, days=21):
-    return Brief(FakeSvc(events, error)).today(days=days, today=TODAY)
+def brief(events, error=None, days=21, proposals=()):
+    return Brief(FakeSvc(events, error, proposals)).today(days=days, today=TODAY)
+
+
+def proposal(pid="abc123", *, days_left=14, edits=42, status="open"):
+    return {"id": pid, "status": status, "title": "Bruiloft 26 sep",
+            "edits": [{}] * edits,
+            "expires_at": (TODAY + datetime.timedelta(days=days_left)).isoformat()}
 
 
 def test_events_are_ordered_by_the_date_in_the_name():
@@ -162,3 +177,35 @@ def test_the_summary_counts_unreadable_separately_from_missing():
 
 def test_an_empty_window_says_so():
     assert brief([])["summary"] == "Geen evenementen in dit venster."
+
+
+# -- what is waiting on her ------------------------------------------------
+
+def test_an_unanswered_proposal_appears_in_the_brief():
+    """It expires in a fortnight and takes its rows with it, silently."""
+    out = brief([ev("2026/09/18 · FEVER")], proposals=[proposal(days_left=3)])
+    assert [w["proposal_id"] for w in out["waiting"]] == ["abc123"]
+    assert out["waiting"][0]["edits"] == 42
+    assert out["waiting"][0]["expires_in_days"] == 3
+    assert "1 voorstel(len) wachten op jou" in out["summary"]
+
+
+def test_decided_proposals_are_not_waiting():
+    out = brief([ev("2026/09/18 · FEVER")],
+                proposals=[proposal("a", status="applied"),
+                           proposal("b", status="rejected"),
+                           proposal("c", status="open")])
+    assert [w["proposal_id"] for w in out["waiting"]] == ["c"]
+
+
+def test_the_one_running_out_first_is_listed_first():
+    out = brief([ev("2026/09/18 · FEVER")],
+                proposals=[proposal("later", days_left=9),
+                           proposal("sooner", days_left=1)])
+    assert [w["proposal_id"] for w in out["waiting"]] == ["sooner", "later"]
+
+
+def test_a_quiet_window_still_reports_what_is_waiting():
+    out = brief([], proposals=[proposal()])
+    assert out["events"] == []
+    assert "wachten op jou" in out["summary"]

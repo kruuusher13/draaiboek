@@ -126,6 +126,13 @@ def cmd_today(args) -> int:
             print(f"      · {t['note'][:104]}")
     if not b["events"]:
         print("Niets te doen in dit venster.")
+    if b.get("waiting"):
+        print("\nWacht op jou:")
+        for w in b["waiting"]:
+            left = w["expires_in_days"]
+            when = "verloopt vandaag" if left == 0 else (
+                f"nog {left} dag(en)" if isinstance(left, int) else "")
+            print(f"  · {w['title'][:56]}  ({w['edits']} wijzigingen, {when})")
     return 0
 
 
