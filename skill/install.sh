@@ -15,10 +15,15 @@ cd "$DEST"
 
 # The default python3 is often the system one -- 3.9 on macOS -- which is too
 # old. Find a usable interpreter rather than assuming the first one on PATH.
+# Homebrew's python is often absent from a non-interactive PATH, which is the
+# shell an agent runs in, so look there by name as well.
 PY=""
-for candidate in python3.14 python3.13 python3.12 python3; do
+for candidate in \
+    python3.14 python3.13 python3.12 \
+    /opt/homebrew/bin/python3.14 /opt/homebrew/bin/python3.13 /opt/homebrew/bin/python3.12 \
+    /opt/homebrew/bin/python3 /usr/local/bin/python3 python3; do
   if command -v "$candidate" >/dev/null 2>&1 &&
-     "$candidate" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3,12) else 1)'; then
+     "$candidate" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3,12) else 1)' 2>/dev/null; then
     PY="$candidate"; break
   fi
 done
