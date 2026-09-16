@@ -60,7 +60,14 @@ class Builder:
         self.svc = svc
         self.g = svc.google
 
+    plan_anchor = False
+    before_plan = False
+
     def end(self) -> int:
+        if self.before_plan:
+            imgs = self.image_paragraphs()
+            if len(imgs) > 1:
+                return imgs[1]["startIndex"]
         body = self.g.get_document(self.doc)["body"]["content"]
         return body[-1].get("endIndex", 1) - 1
 
@@ -77,7 +84,7 @@ class Builder:
             self.doc = self.g.drive.files().copy(
                 fileId=logo_from, body=body, supportsAllDrives=True,
                 fields="id").execute()["id"]
-            self.strip_to_logo()
+            self.strip_to_assets()
         else:
             body = {"name": name, "mimeType": "application/vnd.google-apps.document"}
             if folder:
@@ -100,9 +107,17 @@ class Builder:
         self.footer()
         # Dutch for the floor, English after it for Fever and international
         # clients -- one document, so there is only ever one to update.
+        # Build the first half above the plan so the drawing lands inside
+        # "Zaal & opstelling", where a banquet event order puts it.
+        self.before_plan = self.plan_anchor
         self.chapter("Tijdschema", SCHEDULE)
         self.chapter("Zaal & opstelling", ROOM)
-        self.plan_slot("Standaard opstelling — vervang bij een andere indeling")
+        self.before_plan = False
+        if not self.plan_anchor:
+            self.plan_slot("Plattegrond hier plakken")
+        else:
+            self.paragraph("Standaard opstelling — vervang bij een andere indeling",
+                           size=8, colour={"red": .55, "green": .53, "blue": .50})
         for left, right in PAIRS_NL:
             self.pair(left, right)
 
@@ -171,21 +186,39 @@ class Builder:
                                   "red": .55, "green": .53, "blue": .50}}}},
                 "fields": "fontSize,weightedFontFamily,foregroundColor"}}])
 
-    def strip_to_logo(self) -> None:
-        """Keep the wordmark paragraph, delete everything after it."""
+    def image_paragraphs(self) -> list[dict]:
+        return [el for el in self.g.get_document(self.doc)["body"]["content"]
+                if el.get("paragraph") and any("inlineObjectElement" in e
+                    for e in el["paragraph"].get("elements", []))]
+
+    def strip_to_assets(self) -> None:
+        """Keep the wordmark and the floor plan; delete everything else.
+
+        Google can only insert an image from a publicly reachable URL, so
+        embedding the venue's plan would mean publishing the drawing. Copying a
+        draaiboek that already contains it avoids that entirely -- the picture
+        never leaves the Drive it was already in.
+        """
+        imgs = self.image_paragraphs()
+        if not imgs:
+            return
+        logo, plan = imgs[0], (imgs[1] if len(imgs) > 1 else None)
         body = self.g.get_document(self.doc)["body"]["content"]
-        logo_end = None
-        for el in body:
-            para = el.get("paragraph")
-            if para and any("inlineObjectElement" in e for e in para.get("elements", [])):
-                logo_end = el.get("endIndex")
-                break
-        start = logo_end if logo_end else 1
         end = body[-1].get("endIndex", 1) - 1
-        if end > start:
+        cuts = []
+        if plan:
+            # everything after the plan, then everything between logo and plan
+            if end > plan["endIndex"]:
+                cuts.append((plan["endIndex"], end))
+            if plan["startIndex"] > logo["endIndex"]:
+                cuts.append((logo["endIndex"], plan["startIndex"]))
+        elif end > logo["endIndex"]:
+            cuts.append((logo["endIndex"], end))
+        for a, b in sorted(cuts, reverse=True):
             self.g.batch_update(self.doc, [{"deleteContentRange": {
-                "range": {"startIndex": start, "endIndex": end}}}])
-            time.sleep(1.0)
+                "range": {"startIndex": a, "endIndex": b}}}])
+            time.sleep(0.8)
+        self.plan_anchor = bool(plan)
 
     def legend(self) -> None:
         """The four category colours, in their own colours."""
